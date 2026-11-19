@@ -58,18 +58,24 @@ export default function SignUpPage() {
 
     setLoading(true)
     try {
-      const { error } = await authClient.signUp.email({
+      const data = {
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password,
+      }
+
+      const { data: authData, error } = await authClient.signUp.email({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        callbackURL: "/",
         role,
         plan: "free",
-        callbackURL: "/",
-      } as any)
+      })
 
       if (error) {
         setErrorMsg(error.message || "Could not create account.")
-      } else {
+      } else if (authData) {
         router.push("/")
         router.refresh()
       }
@@ -99,7 +105,6 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-100/80 px-3 py-6 sm:px-6 sm:py-10">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl sm:rounded-3xl lg:grid-cols-12">
-        {/* Mobile Top Strip */}
         <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-900 px-5 py-3.5 text-white lg:hidden">
           <span className="text-xs font-semibold tracking-wide text-indigo-200">
             MentorLagbe • Free Plan
@@ -108,8 +113,6 @@ export default function SignUpPage() {
             {isTutor ? "Tutor: Up to 2 Posts" : "Student: Free + Notes"}
           </span>
         </div>
-
-        {/* Left Form Panel */}
         <div className="flex flex-col justify-center bg-white p-5 sm:p-10 lg:col-span-7 lg:p-11">
           <div className="mx-auto w-full max-w-md">
             <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -156,7 +159,6 @@ export default function SignUpPage() {
               noValidate
               className="space-y-3 sm:space-y-3.5"
             >
-              {/* Role Cards */}
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-semibold tracking-wider text-slate-600 uppercase sm:text-xs">
                   Select Role
@@ -296,13 +298,9 @@ export default function SignUpPage() {
             </p>
           </div>
         </div>
-
-        {/* Right Dynamic Role Panel: Books, Notes & Limits */}
         <div className="relative hidden flex-col justify-between bg-gradient-to-br from-slate-900 via-indigo-950 to-indigo-900 p-8 text-white lg:col-span-5 lg:flex">
           <div className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full bg-indigo-500/20 blur-3xl" />
           <div className="pointer-events-none absolute bottom-10 left-0 h-52 w-52 rounded-full bg-amber-400/10 blur-3xl" />
-
-          {/* Top Role Switcher inside Preview */}
           <div className="relative z-10">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-indigo-200">
@@ -359,8 +357,6 @@ export default function SignUpPage() {
               </>
             )}
           </div>
-
-          {/* Middle Visual: Quota + Books/Notes */}
           <div className="relative z-10 my-5 space-y-2.5">
             {isTutor ? (
               <>
@@ -436,8 +432,6 @@ export default function SignUpPage() {
               </>
             )}
           </div>
-
-          {/* Bottom Summary Strip */}
           <div className="relative z-10 rounded-2xl border border-white/15 bg-white/10 p-3.5 text-xs text-indigo-100/90 backdrop-blur-md">
             <div className="flex items-center gap-2 font-semibold text-white">
               <CheckCircle2 className="h-4 w-4 text-emerald-300" />
