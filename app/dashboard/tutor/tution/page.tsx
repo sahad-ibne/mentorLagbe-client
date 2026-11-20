@@ -9,6 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -79,6 +87,7 @@ export default function ManageTuitionPage() {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<EditFormState | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<TuitionRecord | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -260,6 +269,7 @@ export default function ManageTuitionPage() {
 
       setTuitions((prev) => prev.filter((t) => getTuitionId(t) !== id))
       setFeedback("Tuition post deleted.")
+      setDeleteTarget(null)
     } catch (err) {
       setErrorMsg(
         err instanceof Error ? err.message : "Could not delete tuition."
@@ -278,6 +288,8 @@ export default function ManageTuitionPage() {
     }
     return "bg-amber-50 text-amber-800 border-amber-200"
   }
+
+  const targetId = deleteTarget ? getTuitionId(deleteTarget) : ""
 
   return (
     <div className="mx-auto mt-2 max-w-5xl space-y-6">
@@ -642,7 +654,7 @@ export default function ManageTuitionPage() {
                           variant="outline"
                           size="sm"
                           disabled={!recordId || deletingId === id}
-                          onClick={() => handleDelete(recordId)}
+                          onClick={() => setDeleteTarget(item)}
                           className="gap-1.5 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50"
                         >
                           {deletingId === id ? (
@@ -661,6 +673,55 @@ export default function ManageTuitionPage() {
           })}
         </div>
       )}
+
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && !deletingId) {
+            setDeleteTarget(null)
+          }
+        }}
+      >
+        <DialogContent className="rounded-2xl border-slate-200 bg-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900">
+              Delete tuition post?
+            </DialogTitle>
+            <DialogDescription className="text-xs leading-5 text-slate-500 sm:text-sm">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-slate-800">
+                &ldquo;{deleteTarget?.title}&rdquo;
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={Boolean(deletingId)}
+              onClick={() => setDeleteTarget(null)}
+              className="rounded-xl border-slate-200 text-slate-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!targetId || deletingId === targetId}
+              onClick={() => handleDelete(targetId)}
+              className="gap-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700"
+            >
+              {deletingId === targetId ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              {deletingId === targetId ? "Deleting..." : "Yes, Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

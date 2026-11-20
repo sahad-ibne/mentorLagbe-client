@@ -1,7 +1,4 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000"
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
 
 export interface TuitionRecord {
   _id?: string
@@ -41,6 +38,13 @@ export const updateTution = async (
       "content-type": "application/json",
     },
     body: JSON.stringify(payload),
+  })
+  return res.json()
+}
+
+export const deleteTution = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/tutions/${id}`, {
+    method: "DELETE",
   })
   return res.json()
 }
