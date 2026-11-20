@@ -1,0 +1,33 @@
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
+
+export interface TuitionRecord {
+  _id?: string
+  id?: string
+  title: string
+  subject: string
+  classLevel: string
+  mode: "online" | "offline" | "hybrid"
+  location: string
+  monthlyFee: number
+  daysPerWeek: number
+  bannerImage?: string
+  description: string
+  approvalStatus?: "pending" | "approved" | "rejected"
+  status?: "active" | "closed"
+  isActive?: boolean
+  tutorName?: string
+  tutorEmail?: string
+}
+
+export const getTutions = async (tutorEmail?: string) => {
+  const query = tutorEmail
+    ? `?tutorEmail=${encodeURIComponent(tutorEmail)}`
+    : ""
+  const res = await fetch(`${BASE_URL}/tutions${query}`, {
+    cache: "no-store",
+  })
+  return res.json()
+}

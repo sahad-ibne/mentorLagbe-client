@@ -85,28 +85,30 @@ export default function PostTuitionPage() {
   const isPro = (user?.plan || "free").toLowerCase() === "pro"
 
   const [form, setForm] = useState<TuitionFormValues>(initialValues)
-  const [existingCount, setExistingCount] = useState<number>(0)
-  const [loadingLimit, setLoadingLimit] = useState<boolean>(true)
+  const [limitResult, setLimitResult] = useState<{
+    email: string
+    count?: number
+    error?: string
+  } | null>(null)
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [errorMsg, setErrorMsg] = useState<string>("")
   const [successMsg, setSuccessMsg] = useState<string>("")
 
   useEffect(() => {
     if (!user?.email || isPro) {
-      setExistingCount(0)
-      setLoadingLimit(false)
       return
     }
 
     let active = true
-    setLoadingLimit(true)
 
     const fetchExistingTuitions = async () => {
       try {
         const res = await fetch(
           `${API_BASE}/tutions?tutorEmail=${encodeURIComponent(user.email!)}`
         )
-        if (!res.ok) return
+        if (!res.ok) {
+          throw new Error("Could not check the tuition posting quota.")
+        }
 
         const data: unknown = await res.json()
         const list = Array.isArray(data)
@@ -121,14 +123,22 @@ export default function PostTuitionPage() {
                 "tuitions" in data &&
                 Array.isArray(data.tuitions)
               ? data.tuitions
-              : []
+              : null
+        if (!list) {
+          throw new Error("Could not check the tuition posting quota.")
+        }
 
         if (active) {
-          setExistingCount(list.length)
+          setLimitResult({ email: user.email!, count: list.length })
         }
       } catch {
-      } finally {
-        if (active) setLoadingLimit(false)
+        if (active) {
+          setLimitResult({
+            email: user.email!,
+            error:
+              "Could not check your posting limit. Refresh the page and try again.",
+          })
+        }
       }
     }
 
@@ -138,6 +148,11 @@ export default function PostTuitionPage() {
     }
   }, [user?.email, isPro])
 
+  const currentLimitResult =
+    user?.email && limitResult?.email === user.email ? limitResult : null
+  const existingCount = currentLimitResult?.count ?? 0
+  const loadingLimit = Boolean(user?.email && !isPro && !currentLimitResult)
+  const limitCheckError = currentLimitResult?.error ?? ""
   const reachedFreeLimit = !isPro && existingCount >= FREE_PLAN_LIMIT
 
   const handleChange = (
@@ -207,6 +222,16 @@ export default function PostTuitionPage() {
       setErrorMsg(validationError)
       return
     }
+    if (limitCheckError) {
+      setErrorMsg(limitCheckError)
+      return
+    }
+
+    const tutorEmail = user?.email
+    if (!tutorEmail) {
+      setErrorMsg("Please sign in first to post a tuition.")
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -226,7 +251,7 @@ export default function PostTuitionPage() {
         tutorPlan: isPro ? ("pro" as const) : ("free" as const),
       }
 
-      const result = await createTution(tuitionData as never)
+      const result = await createTution(tuitionData)
       if (result?.error || result?.success === false) {
         throw new Error(
           result?.error || result?.message || "Failed to post tuition."
@@ -237,7 +262,10 @@ export default function PostTuitionPage() {
         "Tuition posted successfully with approvalStatus: 'pending'."
       )
       setForm(initialValues)
-      setExistingCount((prev) => prev + 1)
+      setLimitResult((current) => ({
+        email: tutorEmail,
+        count: (current?.email === tutorEmail ? (current.count ?? 0) : 0) + 1,
+      }))
       router.refresh()
     } catch (err) {
       setErrorMsg(
@@ -281,9 +309,11 @@ export default function PostTuitionPage() {
             <p className="text-xs text-slate-500">
               {loadingLimit
                 ? "Checking your plan quota..."
-                : isPro
-                  ? "Unlimited tuition posts available. New posts start as pending."
-                  : `Posts used: ${existingCount} / ${FREE_PLAN_LIMIT} · New posts start as pending.`}
+                : limitCheckError
+                  ? "Unable to verify your posting quota."
+                  : isPro
+                    ? "Unlimited tuition posts available. New posts start as pending."
+                    : `Posts used: ${existingCount} / ${FREE_PLAN_LIMIT} · New posts start as pending.`}
             </p>
           </div>
         </div>
@@ -293,6 +323,12 @@ export default function PostTuitionPage() {
         <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
           You have reached the Free Plan limit of{" "}
           <strong>2 tuition posts</strong>. Upgrade to Pro for unlimited posts.
+        </div>
+      )}
+
+      {limitCheckError && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+          {limitCheckError}
         </div>
       )}
 
@@ -543,7 +579,11 @@ export default function PostTuitionPage() {
               <Button
                 type="submit"
                 disabled={
-                  submitting || loadingLimit || !user?.email || reachedFreeLimit
+                  submitting ||
+                  loadingLimit ||
+                  !user?.email ||
+                  reachedFreeLimit ||
+                  Boolean(limitCheckError)
                 }
                 className="gap-2 rounded-xl bg-indigo-600 px-5 text-white hover:bg-indigo-700"
               >
