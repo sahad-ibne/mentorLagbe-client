@@ -31,3 +31,16 @@ export const getTutions = async (tutorEmail?: string) => {
   })
   return res.json()
 }
+export const updateTution = async (
+  id: string,
+  payload: Partial<TuitionRecord>
+) => {
+  const res = await fetch(`${BASE_URL}/tutions/${id}`, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+  return res.json()
+}
