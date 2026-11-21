@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
+import { toast } from "@/components/ui/toast"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -53,6 +54,11 @@ export default function SignUpPage() {
     const validationError = validateForm()
     if (validationError) {
       setErrorMsg(validationError)
+      toast.add({
+        type: "error",
+        title: "Sign-up failed",
+        description: validationError,
+      })
       return
     }
 
@@ -64,23 +70,44 @@ export default function SignUpPage() {
         password,
       }
 
-      const { data: authData, error } = await authClient.signUp.email({
+      const signUpData = {
         name: data.name,
         email: data.email,
         password: data.password,
         callbackURL: "/",
         role,
         plan: "free",
-      })
+      } as Parameters<typeof authClient.signUp.email>[0] & {
+        role: "student" | "tutor"
+        plan: "free"
+      }
+
+      const { data: authData, error } =
+        await authClient.signUp.email(signUpData)
 
       if (error) {
         setErrorMsg(error.message || "Could not create account.")
+        toast.add({
+          type: "error",
+          title: "Sign-up failed",
+          description: error.message || "Could not create account.",
+        })
       } else if (authData) {
+        toast.add({
+          type: "success",
+          title: "Account created",
+          description: "Your account was created successfully.",
+        })
         router.push("/")
         router.refresh()
       }
     } catch {
       setErrorMsg("Something went wrong. Please try again.")
+      toast.add({
+        type: "error",
+        title: "Sign-up failed",
+        description: "Something went wrong. Please try again.",
+      })
     } finally {
       setLoading(false)
     }
@@ -96,6 +123,11 @@ export default function SignUpPage() {
       })
     } catch {
       setErrorMsg("Google sign-in failed. Please try again.")
+      toast.add({
+        type: "error",
+        title: "Google sign-up failed",
+        description: "Please try again.",
+      })
       setLoading(false)
     }
   }

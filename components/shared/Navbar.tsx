@@ -14,6 +14,7 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { useSession, signOut } from "@/lib/auth-client"
+import { toast } from "@/components/ui/toast"
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -67,17 +68,37 @@ export default function Navbar() {
   }, [])
 
   const handleSignOut = async () => {
-    await signOut({
-      fetchOptions: {
-        onSuccess: async () => {
-          setDropdownOpen(false)
-          setMobileMenuOpen(false)
-          await refetch?.()
-          router.push("/sign-in")
-          router.refresh()
+    try {
+      await signOut({
+        fetchOptions: {
+          onSuccess: async () => {
+            setDropdownOpen(false)
+            setMobileMenuOpen(false)
+            await refetch?.()
+            toast.add({
+              type: "success",
+              title: "Signed out",
+              description: "You have been signed out successfully.",
+            })
+            router.push("/sign-in")
+            router.refresh()
+          },
+          onError: () => {
+            toast.add({
+              type: "error",
+              title: "Sign-out failed",
+              description: "Could not sign out. Please try again.",
+            })
+          },
         },
-      },
-    })
+      })
+    } catch {
+      toast.add({
+        type: "error",
+        title: "Sign-out failed",
+        description: "Could not sign out. Please try again.",
+      })
+    }
   }
 
   const getRoleBadgeStyle = (role: string) => {

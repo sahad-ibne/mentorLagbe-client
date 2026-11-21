@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
+import { toast } from "@/components/ui/toast"
 
 export default function SignInPage() {
   const router = useRouter()
@@ -32,6 +33,11 @@ export default function SignInPage() {
 
     if (!email.trim() || !password) {
       setErrorMsg("Email and password are required.")
+      toast.add({
+        type: "error",
+        title: "Sign-in failed",
+        description: "Email and password are required.",
+      })
       return
     }
 
@@ -50,12 +56,27 @@ export default function SignInPage() {
 
       if (error) {
         setErrorMsg(error.message || "Invalid email or password.")
+        toast.add({
+          type: "error",
+          title: "Sign-in failed",
+          description: error.message || "Invalid email or password.",
+        })
       } else if (authData) {
+        toast.add({
+          type: "success",
+          title: "Signed in",
+          description: "Welcome back!",
+        })
         router.push("/")
         router.refresh()
       }
     } catch {
       setErrorMsg("Something went wrong. Please try again.")
+      toast.add({
+        type: "error",
+        title: "Sign-in failed",
+        description: "Something went wrong. Please try again.",
+      })
     } finally {
       setLoading(false)
     }
@@ -71,6 +92,11 @@ export default function SignInPage() {
       })
     } catch {
       setErrorMsg("Google sign-in failed. Please try again.")
+      toast.add({
+        type: "error",
+        title: "Google sign-in failed",
+        description: "Please try again.",
+      })
       setLoading(false)
     }
   }

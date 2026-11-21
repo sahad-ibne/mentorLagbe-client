@@ -48,6 +48,7 @@ import {
   updateTution,
   type TuitionRecord,
 } from "@/lib/api/tutions"
+import { toast } from "@/components/ui/toast"
 
 type TuitionMode = "online" | "offline" | "hybrid"
 
@@ -206,10 +207,20 @@ export default function ManageTuitionPage() {
       setEditingId(null)
       setEditForm(null)
       setFeedback("Tuition updated successfully.")
+      toast.add({
+        type: "success",
+        title: "Tuition updated",
+        description: "Your tuition changes have been saved.",
+      })
     } catch (err) {
-      setErrorMsg(
+      const message =
         err instanceof Error ? err.message : "Failed to update tuition."
-      )
+      setErrorMsg(message)
+      toast.add({
+        type: "error",
+        title: "Update failed",
+        description: message,
+      })
     } finally {
       setSavingId(null)
     }
@@ -244,10 +255,20 @@ export default function ManageTuitionPage() {
         )
       )
       setFeedback(`Tuition marked as ${nextStatus}.`)
+      toast.add({
+        type: "success",
+        title: "Status updated",
+        description: `Tuition marked as ${nextStatus}.`,
+      })
     } catch (err) {
-      setErrorMsg(
+      const message =
         err instanceof Error ? err.message : "Could not toggle status."
-      )
+      setErrorMsg(message)
+      toast.add({
+        type: "error",
+        title: "Status update failed",
+        description: message,
+      })
     } finally {
       setTogglingId(null)
     }
@@ -270,10 +291,20 @@ export default function ManageTuitionPage() {
       setTuitions((prev) => prev.filter((t) => getTuitionId(t) !== id))
       setFeedback("Tuition post deleted.")
       setDeleteTarget(null)
+      toast.add({
+        type: "success",
+        title: "Tuition deleted",
+        description: "The tuition post was deleted successfully.",
+      })
     } catch (err) {
-      setErrorMsg(
+      const message =
         err instanceof Error ? err.message : "Could not delete tuition."
-      )
+      setErrorMsg(message)
+      toast.add({
+        type: "error",
+        title: "Delete failed",
+        description: message,
+      })
     } finally {
       setDeletingId(null)
     }

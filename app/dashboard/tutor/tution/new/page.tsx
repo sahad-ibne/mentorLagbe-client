@@ -34,6 +34,7 @@ import {
 } from "lucide-react"
 import { useSession } from "@/lib/auth-client"
 import { createTution } from "@/lib/actions/tution"
+import { toast } from "@/components/ui/toast"
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -261,6 +262,11 @@ export default function PostTuitionPage() {
       setSuccessMsg(
         "Tuition posted successfully with approvalStatus: 'pending'."
       )
+      toast.add({
+        type: "success",
+        title: "Tuition posted",
+        description: "Your tuition is pending approval.",
+      })
       setForm(initialValues)
       setLimitResult((current) => ({
         email: tutorEmail,
@@ -268,11 +274,16 @@ export default function PostTuitionPage() {
       }))
       router.refresh()
     } catch (err) {
-      setErrorMsg(
+      const message =
         err instanceof Error
           ? err.message
           : "Something went wrong while posting."
-      )
+      setErrorMsg(message)
+      toast.add({
+        type: "error",
+        title: "Post failed",
+        description: message,
+      })
     } finally {
       setSubmitting(false)
     }
