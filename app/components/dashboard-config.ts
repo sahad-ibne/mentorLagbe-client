@@ -79,7 +79,7 @@ const roleNavigation: Record<DashboardRole, DashboardMenuItem[]> = {
     {
       id: "applicants",
       name: "Applicants",
-      href: "#applicants",
+      href: "/dashboard/tutor/applications",
       icon: UserRoundCheck,
     },
   ],

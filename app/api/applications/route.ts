@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { MongoClient } from "mongodb"
 
 const mongoUri = process.env.BETTER_AUTH_DB_URI
+const TUITION_API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
 
 let mongoClient: MongoClient | null = null
 
@@ -31,6 +35,38 @@ async function getSession(request: NextRequest) {
   return session?.user ? session : null
 }
 
+async function getTutorTuitionIds(email: string) {
+  const response = await fetch(
+    `${TUITION_API_BASE}/tutions?tutorEmail=${encodeURIComponent(email)}`,
+    { cache: "no-store" }
+  )
+  if (!response.ok) {
+    throw new Error("Could not verify the tutor's tuition posts.")
+  }
+
+  const data = await response.json()
+  const tuitions = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.tutions)
+      ? data.tutions
+      : Array.isArray(data?.tuitions)
+        ? data.tuitions
+        : null
+  if (!tuitions) {
+    throw new Error("The tuition service returned an unexpected response.")
+  }
+
+  return tuitions
+    .filter(
+      (tuition: { tutorEmail?: string }) =>
+        tuition.tutorEmail?.toLowerCase() === email.toLowerCase()
+    )
+    .map((tuition: { _id?: string; id?: string }) =>
+      String(tuition._id || tuition.id || "")
+    )
+    .filter(Boolean)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession(request)
@@ -39,19 +75,63 @@ export async function GET(request: NextRequest) {
     }
 
     const role = String(session.user.role || "").toLowerCase()
-    if (role !== "student") {
-      return NextResponse.json({ error: "Only students can apply." }, { status: 403 })
-    }
-
     const tuitionId = request.nextUrl.searchParams.get("tuitionId")
-    if (!tuitionId) {
-      return NextResponse.json({ error: "Tuition ID is required." }, { status: 400 })
+    const db = await getDatabase()
+
+    if (role === "student" && !tuitionId) {
+      const studentId = String(session.user.id)
+      const applications = await db
+        .collection("applications")
+        .find({ studentId })
+        .sort({ createdAt: -1 })
+        .toArray()
+
+      return NextResponse.json({
+        applications: applications.map((application) => ({
+          ...application,
+          _id: application._id.toString(),
+        })),
+      })
     }
 
-    const db = await getDatabase()
+    if (role === "tutor" && !tuitionId) {
+      const email = String(session.user.email || "").trim()
+      if (!email) {
+        return NextResponse.json(
+          { error: "Your account has no email address." },
+          { status: 400 }
+        )
+      }
+
+      const tuitionIds = await getTutorTuitionIds(email)
+      if (tuitionIds.length === 0) {
+        return NextResponse.json({ applications: [] })
+      }
+
+      const applications = await db
+        .collection("applications")
+        .find({ tuitionId: { $in: tuitionIds } })
+        .sort({ createdAt: -1 })
+        .toArray()
+      return NextResponse.json({
+        applications: applications.map((application) => ({
+          ...application,
+          _id: application._id.toString(),
+        })),
+      })
+    }
+
+    if (role !== "student" || !tuitionId) {
+      return NextResponse.json(
+        { error: "Only students can check application status." },
+        { status: 403 }
+      )
+    }
+
+    const studentId = String(session.user.id)
     const existing = await db.collection("applications").findOne({
       tuitionId,
-      studentId: String(session.user.id),
+      studentId,
     })
 
     return NextResponse.json({ applied: Boolean(existing) })

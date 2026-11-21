@@ -1,5 +1,3 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
-
 export interface TuitionInput {
   title: string
   subject: string
@@ -17,12 +15,16 @@ export interface TuitionInput {
 }
 
 export const createTution = async (data: TuitionInput) => {
-  const res = await fetch(`${BASE_URL}/tutions`, {
+  const res = await fetch("/api/tuitions", {
     method: "POST",
     headers: {
       "content-type": "application/json",
     },
     body: JSON.stringify(data),
   })
-  return res.json()
+  const result = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(result?.error || result?.message || "Failed to post tuition.")
+  }
+  return result
 }

@@ -25,25 +25,44 @@ export const getTutions = async (query = "") => {
   })
   return res.json()
 }
+
+export const getMyTuitions = async (): Promise<TuitionRecord[]> => {
+  const res = await fetch("/api/tuitions", { cache: "no-store" })
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || "Could not load your tuitions.")
+  }
+  if (Array.isArray(data?.tutions)) return data.tutions
+  if (Array.isArray(data?.tuitions)) return data.tuitions
+  throw new Error("The tuition service returned an unexpected response.")
+}
 export const updateTution = async (
   id: string,
   payload: Partial<TuitionRecord>
 ) => {
-  const res = await fetch(`${BASE_URL}/tutions/${id}`, {
+  const res = await fetch(`/api/tuitions/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: {
       "content-type": "application/json",
     },
     body: JSON.stringify(payload),
   })
-  return res.json()
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || data?.message || "Could not update tuition.")
+  }
+  return data
 }
 
 export const deleteTution = async (id: string) => {
-  const res = await fetch(`${BASE_URL}/tutions/${id}`, {
+  const res = await fetch(`/api/tuitions/${encodeURIComponent(id)}`, {
     method: "DELETE",
   })
-  return res.json()
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || data?.message || "Could not delete tuition.")
+  }
+  return data
 }
 
 export const getTutionById = async (

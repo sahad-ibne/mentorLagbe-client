@@ -36,11 +36,6 @@ import { useSession } from "@/lib/auth-client"
 import { createTution } from "@/lib/actions/tution"
 import { toast } from "@/components/ui/toast"
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000"
-
 const FREE_PLAN_LIMIT = 2
 const DEFAULT_BANNER_URL =
   "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80"
@@ -79,11 +74,13 @@ export default function PostTuitionPage() {
     | {
         name?: string | null
         email?: string | null
+        role?: string | null
         plan?: string | null
       }
     | undefined
 
   const isPro = (user?.plan || "free").toLowerCase() === "pro"
+  const isTutor = user?.role?.toLowerCase() === "tutor"
 
   const [form, setForm] = useState<TuitionFormValues>(initialValues)
   const [limitResult, setLimitResult] = useState<{
@@ -96,7 +93,7 @@ export default function PostTuitionPage() {
   const [successMsg, setSuccessMsg] = useState<string>("")
 
   useEffect(() => {
-    if (!user?.email || isPro) {
+    if (!user?.email || user.role?.toLowerCase() !== "tutor" || isPro) {
       return
     }
 
@@ -104,27 +101,19 @@ export default function PostTuitionPage() {
 
     const fetchExistingTuitions = async () => {
       try {
-        const res = await fetch(
-          `${API_BASE}/tutions?tutorEmail=${encodeURIComponent(user.email!)}`
-        )
+        const res = await fetch("/api/tuitions", { cache: "no-store" })
         if (!res.ok) {
           throw new Error("Could not check the tuition posting quota.")
         }
 
         const data: unknown = await res.json()
-        const list = Array.isArray(data)
-          ? data
-          : typeof data === "object" &&
-              data !== null &&
-              "tutions" in data &&
-              Array.isArray(data.tutions)
+        const list =
+          typeof data === "object" &&
+          data !== null &&
+          "tutions" in data &&
+          Array.isArray(data.tutions)
             ? data.tutions
-            : typeof data === "object" &&
-                data !== null &&
-                "tuitions" in data &&
-                Array.isArray(data.tuitions)
-              ? data.tuitions
-              : null
+            : null
         if (!list) {
           throw new Error("Could not check the tuition posting quota.")
         }
@@ -147,14 +136,17 @@ export default function PostTuitionPage() {
     return () => {
       active = false
     }
-  }, [user?.email, isPro])
+  }, [user?.email, user?.role, isPro])
 
   const currentLimitResult =
     user?.email && limitResult?.email === user.email ? limitResult : null
   const existingCount = currentLimitResult?.count ?? 0
-  const loadingLimit = Boolean(user?.email && !isPro && !currentLimitResult)
+  const loadingLimit = Boolean(
+    user?.email && isTutor && !isPro && !currentLimitResult
+  )
   const limitCheckError = currentLimitResult?.error ?? ""
-  const reachedFreeLimit = !isPro && existingCount >= FREE_PLAN_LIMIT
+  const reachedFreeLimit =
+    isTutor && !isPro && existingCount >= FREE_PLAN_LIMIT
 
   const handleChange = (
     field: keyof TuitionFormValues,
@@ -166,8 +158,8 @@ export default function PostTuitionPage() {
   }
 
   const validate = (): string | null => {
-    if (!user?.email) {
-      return "Please sign in first to post a tuition."
+    if (user?.role?.toLowerCase() !== "tutor") {
+      return "Only tutor accounts can post a tuition."
     }
     if (reachedFreeLimit) {
       return "Free Plan allows up to 2 tuition posts. Upgrade to Pro for unlimited posts."

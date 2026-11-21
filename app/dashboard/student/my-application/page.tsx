@@ -98,7 +98,7 @@ const MyApplicationPage = () => {
       setLoading(true)
       setErrorMsg("")
       try {
-        const list = await getStudentApplications(studentEmail)
+        const list = await getStudentApplications()
         const needsFeeLookup = list.some(
           (application) =>
             typeof application.monthlyFee !== "number" ||

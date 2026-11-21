@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import {
   Card,
@@ -44,7 +44,7 @@ import {
 import { useSession } from "@/lib/auth-client"
 import {
   deleteTution,
-  getTutions,
+  getMyTuitions,
   updateTution,
   type TuitionRecord,
 } from "@/lib/api/tutions"
@@ -95,44 +95,29 @@ export default function ManageTuitionPage() {
   const [feedback, setFeedback] = useState<string>("")
   const [errorMsg, setErrorMsg] = useState<string>("")
 
-  const loadTuitions = useCallback(async (email: string) => {
-    try {
-      const rawData: unknown = await getTutions(email)
-
-      let list: TuitionRecord[] | null = null
-      if (Array.isArray(rawData)) {
-        list = rawData as TuitionRecord[]
-      } else if (rawData && typeof rawData === "object") {
-        const record = rawData as Record<string, unknown>
-        if (Array.isArray(record.tutions)) {
-          list = record.tutions as TuitionRecord[]
-        } else if (Array.isArray(record.tuitions)) {
-          list = record.tuitions as TuitionRecord[]
-        }
-      }
-      if (!list) {
-        throw new Error("Unexpected tuition response.")
-      }
-
-      const normalizedEmail = email.toLowerCase()
-      const filtered = list.filter(
-        (tuition) => tuition.tutorEmail?.toLowerCase() === normalizedEmail
-      )
-
-      setTuitions(filtered)
-      setErrorMsg("")
-    } catch {
-      setErrorMsg("Could not load your tuitions right now.")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    if (!sessionPending && user?.email) {
-      loadTuitions(user.email)
+    if (sessionPending || !user?.email) return
+
+    let active = true
+    const fetchTuitions = async () => {
+      try {
+        const list = await getMyTuitions()
+        if (active) {
+          setTuitions(list)
+          setErrorMsg("")
+        }
+      } catch {
+        if (active) setErrorMsg("Could not load your tuitions right now.")
+      } finally {
+        if (active) setLoading(false)
+      }
     }
-  }, [loadTuitions, sessionPending, user?.email])
+
+    void fetchTuitions()
+    return () => {
+      active = false
+    }
+  }, [sessionPending, user?.email])
 
   const startEditing = (item: TuitionRecord) => {
     const id = getTuitionId(item)

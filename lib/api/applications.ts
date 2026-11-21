@@ -1,5 +1,3 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
-
 export interface StudentApplication {
   _id?: string
   id?: string
@@ -10,6 +8,10 @@ export interface StudentApplication {
   tutionTitle?: string
   tutorName?: string
   tutorEmail?: string
+  studentName?: string
+  phone?: string
+  preferredSchedule?: string
+  learningNote?: string
   monthlyFee?: number | null
   status: "pending" | "accepted" | "rejected" | string
   createdAt?: string
@@ -17,23 +19,47 @@ export interface StudentApplication {
   studentEmail?: string
 }
 
-export const getStudentApplications = async (
-  email?: string
-): Promise<StudentApplication[]> => {
-  const query = email ? `?email=${encodeURIComponent(email)}` : ""
-  const res = await fetch(`${BASE_URL}/applications${query}`, {
-    cache: "no-store",
-  })
-  if (!res.ok) return []
-
-  const data = await res.json()
+export const getStudentApplications = async (): Promise<
+  StudentApplication[]
+> => {
+  const res = await fetch("/api/applications", { cache: "no-store" })
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || "Could not load your applications.")
+  }
   if (Array.isArray(data)) return data
   if (Array.isArray(data?.applications)) return data.applications
-  return []
+  throw new Error("The application service returned an unexpected response.")
+}
+
+export const getTutorApplications = async (): Promise<StudentApplication[]> => {
+  const res = await fetch("/api/applications", { cache: "no-store" })
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || "Could not load applicant requests.")
+  }
+  if (Array.isArray(data?.applications)) return data.applications
+  throw new Error("The application service returned an unexpected response.")
+}
+
+export const updateApplicationStatus = async (
+  id: string,
+  status: "accepted" | "rejected"
+) => {
+  const res = await fetch(`/api/applications/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ status }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || "Could not update application status.")
+  }
+  return data
 }
 
 export const cancelApplication = async (id: string) => {
-  const res = await fetch(`${BASE_URL}/applications/${id}`, {
+  const res = await fetch(`/api/applications/${encodeURIComponent(id)}`, {
     method: "DELETE",
   })
   const data = await res.json().catch(() => ({}))
