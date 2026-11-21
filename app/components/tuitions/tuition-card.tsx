@@ -103,7 +103,7 @@ export function TuitionCard({ tuition }: { tuition: TuitionItem }) {
         <span className="truncate text-xs text-slate-500">
           {tuition.tutorName || "Verified Tutor"}
         </span>
-        <Link href={id ? `/tuitions/${id}` : "/tuitions"}>
+        <Link href={id ? `/browse-tutions/${id}` : "/browse-tutions"}>
           <Button
             size="sm"
             className="rounded-xl bg-indigo-600 text-white hover:bg-indigo-700"

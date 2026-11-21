@@ -119,7 +119,8 @@ export default function Navbar() {
 
   const firstLetter = getFirstLetter(user?.name)
 
-  if (pathname !== "/") return null
+  const publicNavbarRoutes = ["/", "/browse-tutions", "/pricing", "/about"]
+  if (!publicNavbarRoutes.includes(pathname)) return null
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md">
