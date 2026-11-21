@@ -208,6 +208,7 @@ const TutionDetailesPage = async ({
                   tuitionId={tuition._id || tuition.id || id}
                   tuitionTitle={tuition.title}
                   tutorEmail={tuition.tutorEmail}
+                  monthlyFee={tuition.monthlyFee}
                 />
               </div>
             </CardContent>

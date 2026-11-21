@@ -47,13 +47,13 @@ const roleNavigation: Record<DashboardRole, DashboardMenuItem[]> = {
     {
       id: "applications",
       name: "My Applications",
-      href: "#applications",
+      href: "/dashboard/student/my-application",
       icon: FileText,
     },
     {
       id: "saved-tuitions",
       name: "Saved Tuitions",
-      href: "#saved-tuitions",
+      href: "/dashboard/student/saved-tution",
       icon: Bookmark,
     },
   ],

@@ -85,10 +85,21 @@ export async function POST(request: NextRequest) {
     const phone = String(body.phone || "").trim()
     const preferredSchedule = String(body.preferredSchedule || "").trim()
     const learningNote = String(body.learningNote || "").trim()
+    const monthlyFee = Number(body.monthlyFee)
 
-    if (!tuitionId || !phone || !preferredSchedule || !learningNote) {
+    if (
+      !tuitionId ||
+      !phone ||
+      !preferredSchedule ||
+      !learningNote ||
+      !Number.isFinite(monthlyFee) ||
+      monthlyFee < 0
+    ) {
       return NextResponse.json(
-        { error: "Tuition, phone, preferred schedule, and learning note are required." },
+        {
+          error:
+            "Tuition, fee, phone, preferred schedule, and learning note are required.",
+        },
         { status: 400 }
       )
     }
@@ -113,6 +124,7 @@ export async function POST(request: NextRequest) {
       tuitionId,
       tuitionTitle: String(body.tuitionTitle || "").trim(),
       tutorEmail: String(body.tutorEmail || "").trim(),
+      monthlyFee,
       studentId,
       studentName: String(session.user.name || "").trim(),
       studentEmail: String(session.user.email || "").trim(),

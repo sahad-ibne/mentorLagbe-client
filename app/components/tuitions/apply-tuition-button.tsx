@@ -23,12 +23,14 @@ interface ApplyTuitionButtonProps {
   tuitionId: string
   tuitionTitle?: string
   tutorEmail?: string
+  monthlyFee: number
 }
 
 export function ApplyTuitionButton({
   tuitionId,
   tuitionTitle,
   tutorEmail,
+  monthlyFee,
 }: ApplyTuitionButtonProps) {
   const { data: session, isPending } = useSession()
   const user = session?.user as
@@ -91,6 +93,7 @@ export function ApplyTuitionButton({
           tuitionId,
           tuitionTitle,
           tutorEmail,
+          monthlyFee,
           phone: phone.trim(),
           preferredSchedule: preferredSchedule.trim(),
           learningNote: learningNote.trim(),
