@@ -204,7 +204,11 @@ const TutionDetailesPage = async ({
               </div>
 
               <div className="border-t border-slate-100 pt-4">
-                <ApplyTuitionButton tuitionTitle={tuition.title} />
+                <ApplyTuitionButton
+                  tuitionId={tuition._id || tuition.id || id}
+                  tuitionTitle={tuition.title}
+                  tutorEmail={tuition.tutorEmail}
+                />
               </div>
             </CardContent>
           </Card>
