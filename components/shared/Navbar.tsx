@@ -18,7 +18,7 @@ import { toast } from "@/components/ui/toast"
 
 const navLinks = [
   { name: "Home", href: "/" },
-  { name: "Browse Tuitions", href: "/tuitions" },
+  { name: "Browse Tuitions", href: "/browse-tutions" },
   { name: "Pro Plans", href: "/pricing" },
   { name: "How It Works", href: "/about" },
 ]

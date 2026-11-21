@@ -19,11 +19,8 @@ export interface TuitionRecord {
   tutorEmail?: string
 }
 
-export const getTutions = async (tutorEmail?: string) => {
-  const query = tutorEmail
-    ? `?tutorEmail=${encodeURIComponent(tutorEmail)}`
-    : ""
-  const res = await fetch(`${BASE_URL}/tutions${query}`, {
+export const getTutions = async (query = "") => {
+  const res = await fetch(`${BASE_URL}/tutions?${query}`, {
     cache: "no-store",
   })
   return res.json()
