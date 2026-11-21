@@ -45,3 +45,33 @@ export const deleteTution = async (id: string) => {
   })
   return res.json()
 }
+
+export const getTutionById = async (
+  id: string
+): Promise<TuitionRecord | null> => {
+  try {
+    const res = await fetch(`${BASE_URL}/tutions/${id}`, {
+      cache: "no-store",
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      if (data && typeof data === "object") {
+        if ("tution" in data && data.tution) return data.tution
+        if ("tuition" in data && data.tuition) return data.tuition
+        if ("_id" in data || "id" in data) return data as TuitionRecord
+      }
+    }
+  } catch {
+    // Fallback below if direct endpoint fails
+  }
+
+  const all = await getTutions()
+  const list: TuitionRecord[] = Array.isArray(all)
+    ? all
+    : Array.isArray(all?.tutions)
+      ? all.tutions
+      : []
+
+  return list.find((item) => item._id === id || item.id === id) || null
+}
