@@ -161,9 +161,20 @@ export async function POST(request: NextRequest) {
       tutorPlan: plan === "pro" ? "pro" : "free",
     }
 
+    const internalApiSecret = process.env.INTERNAL_API_SECRET
+    if (!internalApiSecret) {
+      return NextResponse.json(
+        { error: "The backend API is not configured on the server." },
+        { status: 503 }
+      )
+    }
+
     const response = await fetch(`${API_BASE}/tutions`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-internal-api-secret": internalApiSecret,
+      },
       body: JSON.stringify(tuition),
     })
     const result = await response.json().catch(() => null)

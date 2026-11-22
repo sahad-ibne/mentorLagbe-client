@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 import { stripe } from "@/lib/stripe"
-import { activateTutorPro } from "@/lib/stripe-upgrade"
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
 
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature")
@@ -37,25 +41,45 @@ export async function POST(request: NextRequest) {
     const checkoutSession = event.data.object as Stripe.Checkout.Session
     const userId = checkoutSession.metadata?.userId
     const email = checkoutSession.metadata?.userEmail
+    const internalApiSecret = process.env.INTERNAL_API_SECRET
+    const isTutorProCheckout =
+      checkoutSession.metadata?.userRole === "tutor" &&
+      checkoutSession.metadata?.plan === "pro"
 
     if (
       checkoutSession.payment_status === "paid" &&
-      checkoutSession.mode === "payment" &&
-      checkoutSession.metadata?.userRole === "tutor" &&
-      checkoutSession.metadata?.plan === "pro" &&
-      userId &&
-      email
+      isTutorProCheckout
     ) {
+      if (!userId || !email || !internalApiSecret) {
+        return NextResponse.json(
+          {
+            error:
+              "Paid Pro checkout is missing required tutor metadata or verification configuration.",
+          },
+          { status: 500 }
+        )
+      }
+
       try {
-        await activateTutorPro({
-          userId,
-          email,
-          checkoutSessionId: checkoutSession.id,
-          customerId:
-            typeof checkoutSession.customer === "string"
-              ? checkoutSession.customer
-              : checkoutSession.customer?.id || null,
+        const response = await fetch(`${API_BASE}/payments/checkout-verify`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-internal-api-secret": internalApiSecret,
+          },
+          body: JSON.stringify({
+            sessionId: checkoutSession.id,
+            userId,
+            email,
+          }),
+          cache: "no-store",
         })
+        const result = await response.json().catch(() => null)
+        if (!response.ok || result?.success !== true) {
+          throw new Error(
+            result?.message || result?.error || "Backend payment verification failed."
+          )
+        }
       } catch (error) {
         return NextResponse.json(
           {

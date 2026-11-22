@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { stripe } from "@/lib/stripe"
-import { activateTutorPro } from "@/lib/stripe-upgrade"
 
-const PRO_PRICE_ID =
-  process.env.STRIPE_PRO_PRICE_ID || "price_1UeV9Z9pnCvIG9dFoAJZUfQ7"
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,46 +18,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Only tutors can upgrade to Pro." }, { status: 403 })
     }
 
-    const { sessionId } = await request.json()
+    const body = await request.json()
+    const sessionId = body?.sessionId
     if (typeof sessionId !== "string" || !sessionId.startsWith("cs_")) {
       return NextResponse.json({ error: "Invalid checkout session." }, { status: 400 })
     }
 
-    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items"],
-    })
-    const lineItems = checkoutSession.line_items?.data || []
-    const purchasedProPlan = lineItems.some(
-      (item) => item.price?.id === PRO_PRICE_ID
-    )
-
-    if (
-      checkoutSession.payment_status !== "paid" ||
-      checkoutSession.mode !== "payment" ||
-      checkoutSession.metadata?.userRole !== "tutor" ||
-      checkoutSession.metadata?.plan !== "pro" ||
-      checkoutSession.metadata?.userId !== userSession.user.id ||
-      checkoutSession.metadata?.userEmail?.toLowerCase() !==
-        userSession.user.email?.toLowerCase() ||
-      !purchasedProPlan
-    ) {
+    const internalApiSecret = process.env.INTERNAL_API_SECRET
+    if (!internalApiSecret) {
       return NextResponse.json(
-        { error: "A completed Pro payment for this tutor could not be verified." },
-        { status: 403 }
+        { error: "The backend API is not configured on the server." },
+        { status: 503 }
       )
     }
 
-    await activateTutorPro({
-      userId: userSession.user.id,
-      email: userSession.user.email,
-      checkoutSessionId: checkoutSession.id,
-      customerId:
-        typeof checkoutSession.customer === "string"
-          ? checkoutSession.customer
-          : checkoutSession.customer?.id || null,
+    const response = await fetch(`${API_BASE}/payments/checkout-verify`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-internal-api-secret": internalApiSecret,
+      },
+      body: JSON.stringify({
+        sessionId,
+        userId: userSession.user.id,
+        email: userSession.user.email,
+      }),
+      cache: "no-store",
     })
+    const result = await response.json().catch(() => null)
 
-    return NextResponse.json({ success: true, plan: "pro" })
+    if (!response.ok || result?.success !== true) {
+      return NextResponse.json(
+        {
+          error:
+            result?.message || result?.error || "Could not verify your payment.",
+        },
+        { status: response.ok ? 502 : response.status }
+      )
+    }
+
+    return NextResponse.json({ success: true, plan: result.plan || "pro" })
   } catch (error) {
     return NextResponse.json(
       {
