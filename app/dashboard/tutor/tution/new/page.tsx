@@ -91,6 +91,7 @@ export default function PostTuitionPage() {
     error?: string
   } | null>(null)
   const [submitting, setSubmitting] = useState<boolean>(false)
+  const [bannerUploading, setBannerUploading] = useState<boolean>(false)
   const [errorMsg, setErrorMsg] = useState<string>("")
   const [successMsg, setSuccessMsg] = useState<string>("")
 
@@ -158,7 +159,89 @@ export default function PostTuitionPage() {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleBannerImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    if (!file) return
+
+    setErrorMsg("")
+    setSuccessMsg("")
+
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Please choose an image file.")
+      input.value = ""
+      return
+    }
+    if (file.size > 32 * 1024 * 1024) {
+      setErrorMsg("The image must be 32 MB or smaller.")
+      input.value = ""
+      return
+    }
+
+    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY
+    if (!apiKey) {
+      setErrorMsg("Image uploads are not configured. Please contact support.")
+      input.value = ""
+      return
+    }
+
+    setBannerUploading(true)
+    try {
+      const imageFormData = new FormData()
+      imageFormData.append("image", file)
+
+      const imgbbAPI = `https://api.imgbb.com/1/upload?key=${encodeURIComponent(apiKey)}`
+      const response = await fetch(imgbbAPI, {
+        method: "POST",
+        body: imageFormData,
+      })
+      const result: unknown = await response.json().catch(() => null)
+      const record =
+        result && typeof result === "object"
+          ? (result as Record<string, unknown>)
+          : null
+      const image =
+        record?.data && typeof record.data === "object"
+          ? (record.data as Record<string, unknown>)
+          : null
+      const uploadedUrl = image?.url
+
+      if (
+        !response.ok ||
+        record?.success !== true ||
+        typeof uploadedUrl !== "string"
+      ) {
+        const apiError =
+          record?.error && typeof record.error === "object"
+            ? (record.error as Record<string, unknown>).message
+            : null
+        throw new Error(
+          typeof apiError === "string"
+            ? apiError
+            : "Could not upload the banner image. Please try again."
+        )
+      }
+
+      setForm((prev) => ({ ...prev, bannerImage: uploadedUrl }))
+      setSuccessMsg("Banner image uploaded successfully.")
+    } catch (error) {
+      setErrorMsg(
+        error instanceof Error
+          ? error.message
+          : "Could not upload the banner image. Please try again."
+      )
+    } finally {
+      input.value = ""
+      setBannerUploading(false)
+    }
+  }
+
   const validate = (): string | null => {
+    if (bannerUploading) {
+      return "Please wait for the banner image upload to finish."
+    }
     if (user?.role?.toLowerCase() !== "tutor") {
       return "Only tutor accounts can post a tuition."
     }
@@ -553,20 +636,28 @@ export default function PostTuitionPage() {
                 htmlFor="bannerImage"
                 className="text-sm font-medium text-slate-700"
               >
-                Banner Image URL
+                Banner Image
               </Label>
               <div className="relative">
                 <ImageIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
                 <Input
                   id="bannerImage"
-                  type="url"
-                  placeholder="https://example.com/banner.jpg (optional)"
-                  value={form.bannerImage}
-                  onChange={(e) => handleChange("bannerImage", e.target.value)}
-                  disabled={submitting || reachedFreeLimit}
-                  className="h-10 rounded-xl border-slate-200 pl-9 focus-visible:ring-indigo-600"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerImageChange}
+                  disabled={submitting || bannerUploading || reachedFreeLimit}
+                  className="h-10 rounded-xl border-slate-200 pl-9 focus-visible:ring-indigo-600 file:mr-3 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-indigo-700"
                 />
               </div>
+              <p className="text-xs text-slate-500">
+                Optional. Choose an image up to 32 MB; it will upload to ImgBB.
+              </p>
+              {bannerUploading && (
+                <p className="flex items-center gap-2 text-sm text-indigo-600">
+                  <Loader2 className="size-4 animate-spin" />
+                  Uploading banner image...
+                </p>
+              )}
 
               {previewSrc && (
                 <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
@@ -609,7 +700,7 @@ export default function PostTuitionPage() {
                   setErrorMsg("")
                   setSuccessMsg("")
                 }}
-                disabled={submitting}
+                disabled={submitting || bannerUploading}
                 className="rounded-xl border-slate-200 text-slate-700"
               >
                 Reset
@@ -618,6 +709,7 @@ export default function PostTuitionPage() {
                 type="submit"
                 disabled={
                   submitting ||
+                  bannerUploading ||
                   loadingLimit ||
                   !user?.email ||
                   reachedFreeLimit ||
@@ -625,8 +717,14 @@ export default function PostTuitionPage() {
                 }
                 className="gap-2 rounded-xl bg-indigo-600 px-5 text-white hover:bg-indigo-700"
               >
-                {submitting && <Loader2 className="size-4 animate-spin" />}
-                {submitting ? "Posting..." : "Post Tuition"}
+                {(submitting || bannerUploading) && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+                {bannerUploading
+                  ? "Uploading image..."
+                  : submitting
+                    ? "Posting..."
+                    : "Post Tuition"}
               </Button>
             </div>
           </form>
