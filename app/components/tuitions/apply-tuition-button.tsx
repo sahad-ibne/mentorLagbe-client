@@ -34,8 +34,7 @@ export function ApplyTuitionButton({
 }: ApplyTuitionButtonProps) {
   const { data: session, isPending } = useSession()
   const user = session?.user as
-    | { id?: string; name?: string; email?: string; role?: string }
-    | undefined
+    { id?: string; name?: string; email?: string; role?: string } | undefined
   const role = (user?.role || "").toLowerCase()
 
   const [open, setOpen] = useState(false)
@@ -74,12 +73,12 @@ export function ApplyTuitionButton({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (role !== "student") return
-
     if (!phone.trim() || !preferredSchedule.trim() || !learningNote.trim()) {
       toast.add({
         type: "error",
         title: "Application incomplete",
-        description: "Phone, preferred schedule, and learning note are required.",
+        description:
+          "Phone, preferred schedule, and learning note are required.",
       })
       return
     }
@@ -142,9 +141,7 @@ export function ApplyTuitionButton({
     return (
       <div className="space-y-2">
         <Link href="/sign-in" className="block">
-          <Button className="h-11 w-full rounded-xl">
-            Sign in to apply
-          </Button>
+          <Button className="h-11 w-full rounded-xl">Sign in to apply</Button>
         </Link>
         <p className="text-center text-xs text-slate-500">
           Only signed-in students can apply.
@@ -207,9 +204,7 @@ export function ApplyTuitionButton({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="application-schedule">
-                Preferred Schedule
-              </Label>
+              <Label htmlFor="application-schedule">Preferred Schedule</Label>
               <Input
                 id="application-schedule"
                 value={preferredSchedule}

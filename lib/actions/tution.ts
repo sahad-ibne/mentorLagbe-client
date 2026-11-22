@@ -24,7 +24,26 @@ export const createTution = async (data: TuitionInput) => {
   })
   const result = await res.json().catch(() => null)
   if (!res.ok) {
-    throw new Error(result?.error || result?.message || "Failed to post tuition.")
+    throw new Error(
+      result?.error || result?.message || "Failed to post tuition."
+    )
+  }
+  return result
+}
+
+export const createTutionCount = async (data: TuitionInput) => {
+  const res = await fetch("/api/tuitions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+  const result = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(
+      result?.error || result?.message || "Failed to post tuition."
+    )
   }
   return result
 }

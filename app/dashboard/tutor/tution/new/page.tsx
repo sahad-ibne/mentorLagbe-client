@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   Card,
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  ArrowRight,
   BookOpen,
   CalendarDays,
   Crown,
@@ -145,8 +147,7 @@ export default function PostTuitionPage() {
     user?.email && isTutor && !isPro && !currentLimitResult
   )
   const limitCheckError = currentLimitResult?.error ?? ""
-  const reachedFreeLimit =
-    isTutor && !isPro && existingCount >= FREE_PLAN_LIMIT
+  const reachedFreeLimit = isTutor && !isPro && existingCount >= FREE_PLAN_LIMIT
 
   const handleChange = (
     field: keyof TuitionFormValues,
@@ -162,7 +163,7 @@ export default function PostTuitionPage() {
       return "Only tutor accounts can post a tuition."
     }
     if (reachedFreeLimit) {
-      return "Free Plan allows up to 2 tuition posts. Upgrade to Pro for unlimited posts."
+      return "Free Plan allows up to 2 tuition posts. Redirecting to Pricing to upgrade."
     }
     if (form.title.trim().length < 5) {
       return "Tuition title must be at least 5 characters."
@@ -210,6 +211,11 @@ export default function PostTuitionPage() {
     setErrorMsg("")
     setSuccessMsg("")
 
+    if (reachedFreeLimit) {
+      router.push("/pricing")
+      return
+    }
+
     const validationError = validate()
     if (validationError) {
       setErrorMsg(validationError)
@@ -251,6 +257,24 @@ export default function PostTuitionPage() {
         )
       }
 
+      const nextCount = existingCount + 1
+
+      setForm(initialValues)
+      setLimitResult((current) => ({
+        email: tutorEmail,
+        count: (current?.email === tutorEmail ? (current.count ?? 0) : 0) + 1,
+      }))
+
+      if (!isPro && nextCount >= FREE_PLAN_LIMIT) {
+        toast.add({
+          type: "success",
+          title: "2nd tuition posted — Free limit reached",
+          description: "Redirecting you to Pricing to upgrade to Pro.",
+        })
+        router.push("/pricing")
+        return
+      }
+
       setSuccessMsg(
         "Tuition posted successfully with approvalStatus: 'pending'."
       )
@@ -259,11 +283,6 @@ export default function PostTuitionPage() {
         title: "Tuition posted",
         description: "Your tuition is pending approval.",
       })
-      setForm(initialValues)
-      setLimitResult((current) => ({
-        email: tutorEmail,
-        count: (current?.email === tutorEmail ? (current.count ?? 0) : 0) + 1,
-      }))
       router.refresh()
     } catch (err) {
       const message =
@@ -323,9 +342,18 @@ export default function PostTuitionPage() {
       </div>
 
       {reachedFreeLimit && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
-          You have reached the Free Plan limit of{" "}
-          <strong>2 tuition posts</strong>. Upgrade to Pro for unlimited posts.
+        <div className="flex flex-col justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-sm text-amber-950 sm:flex-row sm:items-center">
+          <p className="leading-5">
+            You have reached the Free Plan limit of{" "}
+            <strong>2 tuition posts</strong>. Upgrade to Pro for unlimited
+            posts.
+          </p>
+          <Link href="/pricing" className="shrink-0">
+            <Button className="gap-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
+              Upgrade to Pro
+              <ArrowRight className="size-4" />
+            </Button>
+          </Link>
         </div>
       )}
 
@@ -346,6 +374,7 @@ export default function PostTuitionPage() {
           {successMsg}
         </div>
       )}
+
       <Card className="rounded-2xl border-slate-200 bg-white shadow-xs">
         <CardHeader className="space-y-1.5 border-b border-slate-100 pb-5">
           <CardTitle className="text-base font-bold text-slate-900 sm:text-lg">
@@ -378,6 +407,7 @@ export default function PostTuitionPage() {
                 className="h-10 rounded-xl border-slate-200 focus-visible:ring-indigo-600"
               />
             </div>
+
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label
@@ -416,6 +446,7 @@ export default function PostTuitionPage() {
                 />
               </div>
             </div>
+
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label
@@ -467,6 +498,7 @@ export default function PostTuitionPage() {
                 </div>
               </div>
             </div>
+
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label
@@ -515,6 +547,7 @@ export default function PostTuitionPage() {
                 </div>
               </div>
             </div>
+
             <div className="space-y-2">
               <Label
                 htmlFor="bannerImage"
@@ -547,6 +580,7 @@ export default function PostTuitionPage() {
                 </div>
               )}
             </div>
+
             <div className="space-y-2">
               <Label
                 htmlFor="description"
@@ -565,6 +599,7 @@ export default function PostTuitionPage() {
                 className="rounded-xl border-slate-200 focus-visible:ring-indigo-600"
               />
             </div>
+
             <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
               <Button
                 type="button"

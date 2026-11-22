@@ -5,15 +5,9 @@ import { Button } from "@/components/ui/button"
 export default async function PricingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ canceled?: string }>
+  searchParams: Promise<{ canceled?: string; error?: string }>
 }) {
-  const { canceled } = await searchParams
-
-  if (canceled) {
-    console.log(
-      "Order canceled -- continue to shop around and check out when you're ready."
-    )
-  }
+  const { canceled, error } = await searchParams
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -26,6 +20,18 @@ export default async function PricingPage({
           Start free, then upgrade when you need more tuition listings.
         </p>
       </div>
+
+      {canceled && (
+        <p className="mx-auto mt-6 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
+          Checkout was canceled. You can upgrade to Pro whenever you&apos;re
+          ready.
+        </p>
+      )}
+      {error === "tutors-only" && (
+        <p className="mx-auto mt-6 max-w-2xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm text-rose-700">
+          The Pro tutor plan is only available to tutor accounts.
+        </p>
+      )}
 
       <div className="mt-10 grid gap-6 md:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -67,20 +73,11 @@ export default async function PricingPage({
               Priority listing visibility
             </li>
           </ul>
-          <Link href="/sign-up" className="mt-8 block">
-            <form action="/api/checkout_sessions" method="POST">
-              <section>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  type="submit"
-                  role="link"
-                >
-                  Upgrade to Pro
-                </Button>
-              </section>
-            </form>
-          </Link>
+          <form action="/api/checkout_sessions" method="POST" className="mt-8">
+            <Button variant="outline" className="w-full" type="submit">
+              Upgrade to Pro
+            </Button>
+          </form>
         </section>
       </div>
     </main>
