@@ -79,12 +79,13 @@ export function DashboardSidebar() {
   useEffect(() => {
     const updateActiveItem = () => {
       const currentHash = window.location.hash.slice(1)
-      setActiveItem(currentHash || "overview")
+      const currentItem = menuItems.find((item) => item.href === pathname)
+      setActiveItem(currentItem?.id || currentHash || "overview")
     }
     updateActiveItem()
     window.addEventListener("hashchange", updateActiveItem)
     return () => window.removeEventListener("hashchange", updateActiveItem)
-  }, [pathname])
+  }, [menuItems, pathname])
 
   const onNavigate = (id: string) => setActiveItem(id)
   const initials = user?.name?.trim().charAt(0).toUpperCase() || "U"

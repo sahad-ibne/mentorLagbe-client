@@ -13,10 +13,7 @@ const firstParam = (val: string | string[] | undefined) =>
 
 const isApprovedAndActive = (item: TuitionItem) => {
   const approved = (item.approvalStatus || "").toLowerCase() === "approved"
-  const active =
-    typeof item.isActive === "boolean"
-      ? item.isActive
-      : (item.status || "active").toLowerCase() === "active"
+  const active = item.isActive === true
   return approved && active
 }
 
