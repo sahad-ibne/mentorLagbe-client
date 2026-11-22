@@ -2,7 +2,19 @@ import Link from "next/link"
 import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ canceled?: string }>
+}) {
+  const { canceled } = await searchParams
+
+  if (canceled) {
+    console.log(
+      "Order canceled -- continue to shop around and check out when you're ready."
+    )
+  }
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-2xl text-center">
@@ -56,9 +68,18 @@ export default function PricingPage() {
             </li>
           </ul>
           <Link href="/sign-up" className="mt-8 block">
-            <Button variant="outline" className="w-full">
-              Upgrade to Pro
-            </Button>
+            <form action="/api/checkout_sessions" method="POST">
+              <section>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  type="submit"
+                  role="link"
+                >
+                  Upgrade to Pro
+                </Button>
+              </section>
+            </form>
           </Link>
         </section>
       </div>
