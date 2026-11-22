@@ -18,6 +18,21 @@ export const auth = betterAuth({
           },
         }),
       },
+      update: {
+        before: async (user, context) => {
+          if (
+            context?.path.endsWith("/admin/set-role") ||
+            !("role" in user)
+          ) {
+            return
+          }
+
+          const currentRole = context?.context.session?.user?.role
+          if (typeof currentRole !== "string") return false
+
+          return { data: { ...user, role: currentRole } }
+        },
+      },
     },
   },
   emailAndPassword: {
@@ -25,17 +40,21 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
-      role: {
-        type: "string",
-        required: false,
-        defaultValue: "student",
-        input: true,
-      },
       plan: {
         type: "string",
         required: false,
         defaultValue: "free",
         input: false,
+      },
+      phone: {
+        type: "string",
+        required: false,
+        input: true,
+      },
+      bio: {
+        type: "string",
+        required: false,
+        input: true,
       },
     },
   },

@@ -67,6 +67,7 @@ export function DashboardSidebar() {
         email?: string | null
         role?: string | null
         plan?: string | null
+        image?: string | null
       }
     | undefined
   const routeRole = pathname.split("/")[2]
@@ -122,7 +123,17 @@ export function DashboardSidebar() {
         </Link>
         <div className="flex items-center gap-3 border-t border-slate-100 px-5 py-4">
           <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-700">
-            {initials}
+            {user?.image ? (
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-cover bg-center"
+                style={{
+                  backgroundImage: `url("${user.image.replaceAll('"', "%22")}")`,
+                }}
+              />
+            ) : (
+              initials
+            )}
             <span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-white bg-emerald-500" />
           </div>
           <div className="min-w-0 flex-1">

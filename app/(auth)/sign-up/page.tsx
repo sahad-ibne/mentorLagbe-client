@@ -75,12 +75,7 @@ export default function SignUpPage() {
         email: data.email,
         password: data.password,
         callbackURL: "/",
-        role,
-        plan: "free",
-      } as Parameters<typeof authClient.signUp.email>[0] & {
-        role: "student" | "tutor"
-        plan: "free"
-      }
+      } satisfies Parameters<typeof authClient.signUp.email>[0]
 
       const { data: authData, error } =
         await authClient.signUp.email(signUpData)
@@ -93,6 +88,22 @@ export default function SignUpPage() {
           description: error.message || "Could not create account.",
         })
       } else if (authData) {
+        const roleResponse = await fetch("/api/profile/role", {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ role }),
+        })
+        const roleResult = await roleResponse.json().catch(() => null)
+
+        if (!roleResponse.ok) {
+          throw new Error(
+            roleResult?.error || "Your account was created, but the role could not be set."
+          )
+        }
+
+        await authClient.getSession({
+          query: { disableCookieCache: true },
+        })
         toast.add({
           type: "success",
           title: "Account created",
@@ -101,12 +112,14 @@ export default function SignUpPage() {
         router.push("/")
         router.refresh()
       }
-    } catch {
-      setErrorMsg("Something went wrong. Please try again.")
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong. Please try again."
+      setErrorMsg(message)
       toast.add({
         type: "error",
         title: "Sign-up failed",
-        description: "Something went wrong. Please try again.",
+        description: message,
       })
     } finally {
       setLoading(false)

@@ -116,6 +116,6 @@ export function getRoleLabel(role: DashboardRole) {
 export const profileMenuItem: DashboardMenuItem = {
   id: "profile",
   name: "Update Profile",
-  href: "#profile",
+  href: "/dashboard/profile",
   icon: Settings,
 }
