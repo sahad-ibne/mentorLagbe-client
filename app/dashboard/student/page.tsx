@@ -25,7 +25,7 @@ import {
 const StatusPill = ({ status }: { status?: string }) => {
   const normalized = (status || "pending").toLowerCase()
 
-  if (normalized === "approved") {
+  if (normalized === "accepted") {
     return (
       <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80">
         Accepted
@@ -92,8 +92,8 @@ const StudentOverviewPage = () => {
 
   const stats = useMemo(() => {
     const totalApplied = applications.length
-    const approvedCount = applications.filter(
-      (item) => (item.status || "").toLowerCase() === "approved"
+    const acceptedCount = applications.filter(
+      (item) => (item.status || "").toLowerCase() === "accepted"
     ).length
     const pendingCount = applications.filter(
       (item) => (item.status || "pending").toLowerCase() === "pending"
@@ -104,7 +104,7 @@ const StudentOverviewPage = () => {
 
     return {
       totalApplied,
-      approvedCount,
+      acceptedCount,
       pendingCount,
       currentPlan,
     }
@@ -174,7 +174,7 @@ const StudentOverviewPage = () => {
 
           <StatCard
             title="Accepted Applications"
-            value={stats.approvedCount}
+            value={stats.acceptedCount}
             subtitle="Approved by tutors"
             badgeText="Confirmed"
             icon={CheckCircle2}

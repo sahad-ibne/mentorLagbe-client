@@ -39,7 +39,7 @@ interface TutorTuition {
 const ApprovalBadge = ({ status }: { status?: string }) => {
   const normalized = (status || "pending").toLowerCase()
 
-  if (normalized === "approved" || normalized === "accepted") {
+  if (normalized === "approved") {
     return (
       <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80">
         Approved
@@ -129,8 +129,8 @@ export default function TutorDashboardPage() {
 
   const stats = useMemo(() => {
     const totalPosted = tuitions.length
-    const approvedCount = tuitions.filter((t) =>
-      ["approved", "accepted"].includes((t.approvalStatus || "").toLowerCase())
+    const approvedCount = tuitions.filter(
+      (t) => (t.approvalStatus || "").toLowerCase() === "approved"
     ).length
     const pendingCount = tuitions.filter(
       (t) => (t.approvalStatus || "pending").toLowerCase() === "pending"

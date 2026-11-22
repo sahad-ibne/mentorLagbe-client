@@ -24,6 +24,19 @@ async function getSession(request: NextRequest) {
   })
 }
 
+function serializeApplication(application: {
+  _id: ObjectId
+  status?: string
+  [key: string]: unknown
+}) {
+  const status = String(application.status || "pending").toLowerCase()
+  return {
+    ...application,
+    _id: application._id.toString(),
+    status: status === "approved" ? "accepted" : status,
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession(request)
@@ -44,10 +57,7 @@ export async function GET(request: NextRequest) {
         .toArray()
 
       return NextResponse.json({
-        applications: applications.map((application) => ({
-          ...application,
-          _id: application._id.toString(),
-        })),
+        applications: applications.map(serializeApplication),
       })
     }
 
@@ -77,10 +87,7 @@ export async function GET(request: NextRequest) {
         .sort({ createdAt: -1 })
         .toArray()
       return NextResponse.json({
-        applications: applications.map((application) => ({
-          ...application,
-          _id: application._id.toString(),
-        })),
+        applications: applications.map(serializeApplication),
       })
     }
 

@@ -65,7 +65,7 @@ export default function TutorApplicationsPage() {
 
   const handleStatusChange = async (
     application: StudentApplication,
-    status: "approved" | "rejected"
+    status: "accepted" | "rejected"
   ) => {
     const id = application._id || application.id
     if (!id) {
@@ -153,8 +153,8 @@ export default function TutorApplicationsPage() {
             <TableBody>
               {applications.map((application, index) => {
                 const id = application._id || application.id || `${index}`
-                const pending =
-                  (application.status || "pending").toLowerCase() === "pending"
+                const status = (application.status || "pending").toLowerCase()
+                const pending = status === "pending"
                 const updating = updatingId === id
 
                 return (
@@ -192,7 +192,7 @@ export default function TutorApplicationsPage() {
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 capitalize">
-                        {application.status || "pending"}
+                        {status}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -203,7 +203,7 @@ export default function TutorApplicationsPage() {
                             size="sm"
                             disabled={updating}
                             onClick={() =>
-                              handleStatusChange(application, "approved")
+                              handleStatusChange(application, "accepted")
                             }
                             className="gap-1 bg-emerald-600 text-white hover:bg-emerald-700"
                           >
