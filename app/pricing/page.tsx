@@ -17,7 +17,8 @@ export default async function PricingPage({
           Choose the plan that fits you
         </h1>
         <p className="mt-4 text-sm text-slate-600 sm:text-base">
-          Start free, then upgrade when you need more tuition listings.
+          Start free, then upgrade for unlimited student bookmarks or tutor
+          tuition posts.
         </p>
       </div>
 
@@ -27,9 +28,9 @@ export default async function PricingPage({
           ready.
         </p>
       )}
-      {error === "tutors-only" && (
+      {error === "unsupported-role" && (
         <p className="mx-auto mt-6 max-w-2xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm text-rose-700">
-          The Pro tutor plan is only available to tutor accounts.
+          Pro plans are available to student and tutor accounts.
         </p>
       )}
 
@@ -37,17 +38,17 @@ export default async function PricingPage({
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-bold text-slate-900">Free</h2>
           <p className="mt-2 text-sm text-slate-500">
-            For tutors getting started.
+            Core features for students and tutors.
           </p>
           <p className="mt-6 text-4xl font-bold text-slate-900">$0</p>
           <ul className="mt-6 space-y-3 text-sm text-slate-700">
             <li className="flex items-center gap-2">
               <Check className="h-4 w-4 text-emerald-600" />
-              Up to 2 tuition posts
+              Save up to 5 tuitions as a student
             </li>
             <li className="flex items-center gap-2">
               <Check className="h-4 w-4 text-emerald-600" />
-              Browse and manage applications
+              Up to 2 tuition posts as a tutor
             </li>
           </ul>
           <Link href="/sign-up" className="mt-8 block">
@@ -60,17 +61,17 @@ export default async function PricingPage({
         <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-6 shadow-sm">
           <h2 className="text-xl font-bold text-slate-900">Pro</h2>
           <p className="mt-2 text-sm text-slate-500">
-            For tutors with more active classes.
+            More room to learn, teach, and grow.
           </p>
           <p className="mt-6 text-4xl font-bold text-slate-900">Flexible</p>
           <ul className="mt-6 space-y-3 text-sm text-slate-700">
             <li className="flex items-center gap-2">
               <Check className="h-4 w-4 text-emerald-600" />
-              Unlimited tuition posts
+              Unlimited student tuition bookmarks
             </li>
             <li className="flex items-center gap-2">
               <Check className="h-4 w-4 text-emerald-600" />
-              Priority listing visibility
+              Unlimited tutor tuition posts
             </li>
           </ul>
           <form action="/api/checkout_sessions" method="POST" className="mt-8">

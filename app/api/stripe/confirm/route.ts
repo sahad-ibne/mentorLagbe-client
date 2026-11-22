@@ -10,12 +10,17 @@ export async function POST(request: NextRequest) {
   try {
     const userSession = await auth.api.getSession({
       headers: request.headers,
+      query: { disableCookieCache: true },
     })
     if (!userSession) {
       return NextResponse.json({ error: "Sign in to confirm your payment." }, { status: 401 })
     }
-    if (String(userSession.user.role || "").toLowerCase() !== "tutor") {
-      return NextResponse.json({ error: "Only tutors can upgrade to Pro." }, { status: 403 })
+    const role = String(userSession.user.role || "").toLowerCase()
+    if (role !== "tutor" && role !== "student") {
+      return NextResponse.json(
+        { error: "Only student and tutor accounts can upgrade to Pro." },
+        { status: 403 }
+      )
     }
 
     const body = await request.json()
@@ -57,7 +62,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, plan: result.plan || "pro" })
+    return NextResponse.json({
+      success: true,
+      plan: result.plan || "pro",
+      role: result.role || role,
+    })
   } catch (error) {
     return NextResponse.json(
       {

@@ -42,13 +42,13 @@ export async function POST(request: NextRequest) {
     const userId = checkoutSession.metadata?.userId
     const email = checkoutSession.metadata?.userEmail
     const internalApiSecret = process.env.INTERNAL_API_SECRET
-    const isTutorProCheckout =
-      checkoutSession.metadata?.userRole === "tutor" &&
+    const isProCheckout =
+      ["student", "tutor"].includes(checkoutSession.metadata?.userRole || "") &&
       checkoutSession.metadata?.plan === "pro"
 
     if (
       checkoutSession.payment_status === "paid" &&
-      isTutorProCheckout
+      isProCheckout
     ) {
       if (!userId || !email || !internalApiSecret) {
         return NextResponse.json(

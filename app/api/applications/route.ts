@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { MongoClient } from "mongodb"
+import { MongoClient, ObjectId } from "mongodb"
+import { auth } from "@/lib/auth"
 
 const mongoUri = process.env.BETTER_AUTH_DB_URI
-const TUITION_API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000"
 
 let mongoClient: MongoClient | null = null
 
@@ -21,50 +18,10 @@ async function getDatabase() {
 }
 
 async function getSession(request: NextRequest) {
-  const baseUrl =
-    process.env.BETTER_AUTH_URL || "http://localhost:3000"
-  const cookie = request.headers.get("cookie") || ""
-
-  const response = await fetch(`${baseUrl}/api/auth/get-session`, {
-    headers: { cookie },
-    cache: "no-store",
+  return auth.api.getSession({
+    headers: request.headers,
+    query: { disableCookieCache: true },
   })
-
-  if (!response.ok) return null
-  const session = await response.json().catch(() => null)
-  return session?.user ? session : null
-}
-
-async function getTutorTuitionIds(email: string) {
-  const response = await fetch(
-    `${TUITION_API_BASE}/tutions?tutorEmail=${encodeURIComponent(email)}`,
-    { cache: "no-store" }
-  )
-  if (!response.ok) {
-    throw new Error("Could not verify the tutor's tuition posts.")
-  }
-
-  const data = await response.json()
-  const tuitions = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.tutions)
-      ? data.tutions
-      : Array.isArray(data?.tuitions)
-        ? data.tuitions
-        : null
-  if (!tuitions) {
-    throw new Error("The tuition service returned an unexpected response.")
-  }
-
-  return tuitions
-    .filter(
-      (tuition: { tutorEmail?: string }) =>
-        tuition.tutorEmail?.toLowerCase() === email.toLowerCase()
-    )
-    .map((tuition: { _id?: string; id?: string }) =>
-      String(tuition._id || tuition.id || "")
-    )
-    .filter(Boolean)
 }
 
 export async function GET(request: NextRequest) {
@@ -103,7 +60,13 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      const tuitionIds = await getTutorTuitionIds(email)
+      const tutorTuitions = await db
+        .collection("tution")
+        .find({ tutorEmail: email }, { projection: { _id: 1 } })
+        .toArray()
+      const tuitionIds = tutorTuitions.map((tuition) =>
+        tuition._id.toString()
+      )
       if (tuitionIds.length === 0) {
         return NextResponse.json({ applications: [] })
       }
@@ -160,31 +123,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Only students can apply." }, { status: 403 })
     }
 
-    const body = await request.json()
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ error: "Invalid application details." }, { status: 400 })
+    }
+
     const tuitionId = String(body.tuitionId || "").trim()
     const phone = String(body.phone || "").trim()
     const preferredSchedule = String(body.preferredSchedule || "").trim()
     const learningNote = String(body.learningNote || "").trim()
-    const monthlyFee = Number(body.monthlyFee)
 
     if (
-      !tuitionId ||
+      !ObjectId.isValid(tuitionId) ||
       !phone ||
+      phone.length > 40 ||
       !preferredSchedule ||
+      preferredSchedule.length > 200 ||
       !learningNote ||
-      !Number.isFinite(monthlyFee) ||
-      monthlyFee < 0
+      learningNote.length > 2000
     ) {
       return NextResponse.json(
         {
           error:
-            "Tuition, fee, phone, preferred schedule, and learning note are required.",
+            "Provide a valid tuition, phone number, preferred schedule, and learning note.",
         },
         { status: 400 }
       )
     }
 
     const db = await getDatabase()
+    const tuition = await db.collection("tution").findOne({
+      _id: new ObjectId(tuitionId),
+      approvalStatus: "approved",
+      isActive: true,
+    })
+    if (!tuition) {
+      return NextResponse.json(
+        { error: "This tuition is not available for applications." },
+        { status: 404 }
+      )
+    }
+
+    const studentEmail = String(session.user.email || "").trim().toLowerCase()
+    const tutorEmail = String(tuition.tutorEmail || "").trim().toLowerCase()
+    if (!studentEmail || !tutorEmail) {
+      return NextResponse.json(
+        { error: "Student or tutor account email is missing." },
+        { status: 400 }
+      )
+    }
+    if (studentEmail === tutorEmail) {
+      return NextResponse.json(
+        { error: "You cannot apply to your own tuition." },
+        { status: 403 }
+      )
+    }
+
+    const monthlyFee = Number(tuition.monthlyFee)
+    if (!Number.isFinite(monthlyFee) || monthlyFee < 0) {
+      return NextResponse.json(
+        { error: "The tuition has an invalid monthly fee." },
+        { status: 409 }
+      )
+    }
+
     const applications = db.collection("applications")
     await applications.createIndex(
       { tuitionId: 1, studentId: 1 },
@@ -202,12 +204,13 @@ export async function POST(request: NextRequest) {
 
     await applications.insertOne({
       tuitionId,
-      tuitionTitle: String(body.tuitionTitle || "").trim(),
-      tutorEmail: String(body.tutorEmail || "").trim(),
+      tuitionTitle: String(tuition.title || ""),
+      tutorName: String(tuition.tutorName || ""),
+      tutorEmail,
       monthlyFee,
       studentId,
       studentName: String(session.user.name || "").trim(),
-      studentEmail: String(session.user.email || "").trim(),
+      studentEmail,
       phone,
       preferredSchedule,
       learningNote,

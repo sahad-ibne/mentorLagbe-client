@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MongoClient, ObjectId } from "mongodb"
+import { auth } from "@/lib/auth"
 
 const mongoUri = process.env.BETTER_AUTH_DB_URI
-const TUITION_API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000"
 let mongoClient: MongoClient | null = null
 
 async function getDatabase() {
@@ -20,47 +17,19 @@ async function getDatabase() {
 }
 
 async function getSession(request: NextRequest) {
-  const baseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000"
-  const response = await fetch(`${baseUrl}/api/auth/get-session`, {
-    headers: { cookie: request.headers.get("cookie") || "" },
-    cache: "no-store",
+  return auth.api.getSession({
+    headers: request.headers,
+    query: { disableCookieCache: true },
   })
-
-  if (!response.ok) return null
-  const session = await response.json().catch(() => null)
-  return session?.user ? session : null
 }
 
 async function getTutorTuitionIds(email: string) {
-  const response = await fetch(
-    `${TUITION_API_BASE}/tutions?tutorEmail=${encodeURIComponent(email)}`,
-    { cache: "no-store" }
-  )
-  if (!response.ok) {
-    throw new Error("Could not verify the tutor's tuition posts.")
-  }
-
-  const data = await response.json()
-  const tuitions = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.tutions)
-      ? data.tutions
-      : Array.isArray(data?.tuitions)
-        ? data.tuitions
-        : null
-  if (!tuitions) {
-    throw new Error("The tuition service returned an unexpected response.")
-  }
-
-  return tuitions
-    .filter(
-      (tuition: { tutorEmail?: string }) =>
-        tuition.tutorEmail?.toLowerCase() === email.toLowerCase()
-    )
-    .map((tuition: { _id?: string; id?: string }) =>
-      String(tuition._id || tuition.id || "")
-    )
-    .filter(Boolean)
+  const db = await getDatabase()
+  const tuitions = await db
+    .collection("tution")
+    .find({ tutorEmail: email.toLowerCase() }, { projection: { _id: 1 } })
+    .toArray()
+  return tuitions.map((tuition) => tuition._id.toString())
 }
 
 export async function PATCH(

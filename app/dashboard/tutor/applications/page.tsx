@@ -65,7 +65,7 @@ export default function TutorApplicationsPage() {
 
   const handleStatusChange = async (
     application: StudentApplication,
-    status: "accepted" | "rejected"
+    status: "approved" | "rejected"
   ) => {
     const id = application._id || application.id
     if (!id) {
@@ -203,7 +203,7 @@ export default function TutorApplicationsPage() {
                             size="sm"
                             disabled={updating}
                             onClick={() =>
-                              handleStatusChange(application, "accepted")
+                              handleStatusChange(application, "approved")
                             }
                             className="gap-1 bg-emerald-600 text-white hover:bg-emerald-700"
                           >

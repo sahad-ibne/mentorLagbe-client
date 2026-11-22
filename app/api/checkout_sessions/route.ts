@@ -2,13 +2,16 @@ import { auth } from "@/lib/auth"
 import { stripe } from "@/lib/stripe"
 import { NextRequest, NextResponse } from "next/server"
 
-const PRO_PRICE_ID =
+const TUTOR_PRO_PRICE_ID =
   process.env.STRIPE_PRO_PRICE_ID || "price_1UeV9Z9pnCvIG9dFoAJZUfQ7"
+const STUDENT_PRO_PRICE_ID =
+  process.env.STRIPE_STUDENT_PRO_PRICE_ID || "price_1UebKQ9pnCvIG9dFKZlN01S5"
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: request.headers,
+      query: { disableCookieCache: true },
     })
 
     if (!session) {
@@ -18,9 +21,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (String(session.user.role || "").toLowerCase() !== "tutor") {
+    const role = String(session.user.role || "").toLowerCase()
+    if (role !== "tutor" && role !== "student") {
       return NextResponse.redirect(
-        new URL("/pricing?error=tutors-only", request.url),
+        new URL("/pricing?error=unsupported-role", request.url),
         303
       )
     }
@@ -37,15 +41,17 @@ export async function POST(request: NextRequest) {
       process.env.BETTER_AUTH_URL ||
       request.nextUrl.origin
 
+    const priceId =
+      role === "student" ? STUDENT_PRO_PRICE_ID : TUTOR_PRO_PRICE_ID
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{ price: PRO_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       customer_email: session.user.email,
       client_reference_id: session.user.id,
       metadata: {
         userId: session.user.id,
         userEmail: session.user.email,
-        userRole: "tutor",
+        userRole: role,
         plan: "pro",
       },
       success_url: `${origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,

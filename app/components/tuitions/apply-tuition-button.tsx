@@ -22,15 +22,11 @@ import { toast } from "@/components/ui/toast"
 interface ApplyTuitionButtonProps {
   tuitionId: string
   tuitionTitle?: string
-  tutorEmail?: string
-  monthlyFee: number
 }
 
 export function ApplyTuitionButton({
   tuitionId,
   tuitionTitle,
-  tutorEmail,
-  monthlyFee,
 }: ApplyTuitionButtonProps) {
   const { data: session, isPending } = useSession()
   const user = session?.user as
@@ -55,9 +51,19 @@ export function ApplyTuitionButton({
         const res = await fetch(
           `/api/applications?tuitionId=${encodeURIComponent(tuitionId)}`
         )
-        if (res.ok) {
-          const data = await res.json()
-          if (active) setAlreadyApplied(Boolean(data?.applied))
+        const data = await res.json().catch(() => null)
+        if (!res.ok) {
+          throw new Error(data?.error || "Could not check application status.")
+        }
+        if (active) setAlreadyApplied(Boolean(data?.applied))
+      } catch (error) {
+        if (active) {
+          toast.add({
+            type: "error",
+            title: "Application status unavailable",
+            description:
+              error instanceof Error ? error.message : "Please try again.",
+          })
         }
       } finally {
         if (active) setCheckingApplication(false)
@@ -90,9 +96,6 @@ export function ApplyTuitionButton({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           tuitionId,
-          tuitionTitle,
-          tutorEmail,
-          monthlyFee,
           phone: phone.trim(),
           preferredSchedule: preferredSchedule.trim(),
           learningNote: learningNote.trim(),

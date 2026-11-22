@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { getTutionById } from "@/lib/api/tutions"
 import { ApplyTuitionButton } from "@/app/components/tuitions/apply-tuition-button"
+import { BookmarkTuitionButton } from "@/app/components/tuitions/bookmark-tuition-button"
 
 export const dynamic = "force-dynamic"
 
@@ -30,7 +31,11 @@ const TutionDetailesPage = async ({
   const { id } = await params
   const tuition = await getTutionById(id)
 
-  if (!tuition) {
+  if (
+    !tuition ||
+    (tuition.approvalStatus || "").toLowerCase() !== "approved" ||
+    tuition.isActive !== true
+  ) {
     notFound()
   }
 
@@ -204,11 +209,14 @@ const TutionDetailesPage = async ({
               </div>
 
               <div className="border-t border-slate-100 pt-4">
+                <BookmarkTuitionButton
+                  tuitionId={tuition._id || tuition.id || id}
+                />
+              </div>
+              <div>
                 <ApplyTuitionButton
                   tuitionId={tuition._id || tuition.id || id}
                   tuitionTitle={tuition.title}
-                  tutorEmail={tuition.tutorEmail}
-                  monthlyFee={tuition.monthlyFee}
                 />
               </div>
             </CardContent>

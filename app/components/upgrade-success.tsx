@@ -12,6 +12,7 @@ export function UpgradeSuccess({ sessionId }: { sessionId: string }) {
   const { refetch } = useSession()
   const [message, setMessage] = useState("Verifying your Stripe payment...")
   const [error, setError] = useState("")
+  const [dashboardHref, setDashboardHref] = useState("/dashboard/student")
 
   useEffect(() => {
     let active = true
@@ -31,6 +32,9 @@ export function UpgradeSuccess({ sessionId }: { sessionId: string }) {
           )
         }
 
+        if (result?.role === "tutor") {
+          setDashboardHref("/dashboard/tutor")
+        }
         await refetch?.()
         if (active) {
           setMessage("Payment confirmed. Your account is now on the Pro plan.")
@@ -84,9 +88,9 @@ export function UpgradeSuccess({ sessionId }: { sessionId: string }) {
         </>
       )}
 
-      <Link href="/dashboard/tutor" className="mt-6">
+      <Link href={dashboardHref} className="mt-6">
         <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
-          Go to tutor dashboard
+          Go to dashboard
         </Button>
       </Link>
     </main>
