@@ -21,7 +21,18 @@ export async function GET(request: NextRequest) {
     const access = await requireAdmin(request)
     if (access.error) return access.error
 
-    const response = await fetch(`${API_BASE}/tutions`, { cache: "no-store" })
+    const internalApiSecret = process.env.INTERNAL_API_SECRET
+    if (!internalApiSecret) {
+      return NextResponse.json(
+        { error: "The backend API is not configured on the server." },
+        { status: 503 }
+      )
+    }
+
+    const response = await fetch(`${API_BASE}/tutions`, {
+      headers: { "x-internal-api-secret": internalApiSecret },
+      cache: "no-store",
+    })
     const data = await response.json().catch(() => null)
 
     if (!response.ok) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -12,15 +13,10 @@ type Tuition = {
 }
 
 async function getSession(request: NextRequest) {
-  const authBaseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000"
-  const response = await fetch(`${authBaseUrl}/api/auth/get-session`, {
-    headers: { cookie: request.headers.get("cookie") || "" },
-    cache: "no-store",
+  return auth.api.getSession({
+    headers: request.headers,
+    query: { disableCookieCache: true },
   })
-
-  if (!response.ok) return null
-  const session = await response.json().catch(() => null)
-  return session?.user ? session : null
 }
 
 function extractTuitions(data: unknown): Tuition[] {
@@ -33,13 +29,13 @@ function extractTuitions(data: unknown): Tuition[] {
   throw new Error("The tuition service returned an unexpected response.")
 }
 
-async function getOwnedTuition(
-  tutorEmail: string,
-  id: string
-): Promise<Tuition | null> {
+async function getOwnedTuition(token: string, id: string): Promise<Tuition | null> {
   const response = await fetch(
-    `${API_BASE}/tutions?tutorEmail=${encodeURIComponent(tutorEmail)}`,
-    { cache: "no-store" }
+    `${API_BASE}/tutions/mine`,
+    {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }
   )
   if (!response.ok) {
     throw new Error("Could not verify tuition ownership.")
@@ -49,8 +45,7 @@ async function getOwnedTuition(
   return (
     tuitions.find(
       (tuition) =>
-        (tuition._id === id || tuition.id === id) &&
-        tuition.tutorEmail?.toLowerCase() === tutorEmail.toLowerCase()
+        tuition._id === id || tuition.id === id
     ) || null
   )
 }
@@ -81,7 +76,7 @@ async function authorizeOwner(request: NextRequest, id: string) {
     }
   }
 
-  const tuition = await getOwnedTuition(email, id)
+  const tuition = await getOwnedTuition(session.session.token, id)
   if (!tuition) {
     return {
       error: NextResponse.json(
@@ -91,22 +86,21 @@ async function authorizeOwner(request: NextRequest, id: string) {
     }
   }
 
-  return { email }
+  return { email, token: session.session.token }
 }
 
 async function forwardMutation(
   method: "PATCH" | "DELETE",
   id: string,
+  token: string,
   body?: Record<string, unknown>
 ) {
+  const headers = new Headers({ authorization: `Bearer ${token}` })
+  if (body) headers.set("content-type", "application/json")
   const response = await fetch(`${API_BASE}/tutions/${encodeURIComponent(id)}`, {
     method,
-    ...(body
-      ? {
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      : {}),
+    headers,
+    ...(body ? { body: JSON.stringify(body) } : {}),
   })
   const result = await response.json().catch(() => null)
 
@@ -158,7 +152,7 @@ export async function PATCH(
       )
     }
 
-    return await forwardMutation("PATCH", id, update)
+    return await forwardMutation("PATCH", id, authorized.token, update)
   } catch (error) {
     return NextResponse.json(
       {
@@ -178,7 +172,7 @@ export async function DELETE(
     const { id } = await params
     const authorized = await authorizeOwner(request, id)
     if ("error" in authorized) return authorized.error
-    return await forwardMutation("DELETE", id)
+    return await forwardMutation("DELETE", id, authorized.token)
   } catch (error) {
     return NextResponse.json(
       {

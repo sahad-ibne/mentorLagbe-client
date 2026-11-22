@@ -6,6 +6,7 @@ import { StatCard } from "@/app/components/overview/stat-card"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSession } from "@/lib/auth-client"
+import { authFetch } from "@/lib/api/auth-fetch"
 import {
   ArrowRight,
   BookOpen,
@@ -19,7 +20,10 @@ import {
   Users,
 } from "lucide-react"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
 
 interface TutorTuition {
   _id?: string
@@ -67,12 +71,10 @@ export default function TutorDashboardPage() {
   const user = session?.user as
     | {
         name?: string | null
-        email?: string | null
         plan?: string | null
       }
     | undefined
 
-  const tutorEmail = (user?.email || "").toLowerCase()
   const isPro = (user?.plan || "free").toLowerCase() === "pro"
 
   const [tuitions, setTuitions] = useState<TutorTuition[]>([])
@@ -84,28 +86,19 @@ export default function TutorDashboardPage() {
     const loadTutorTuitions = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`${BASE_URL}/tutions`, { cache: "no-store" })
+        const res = await authFetch(`${API_BASE}/tutions/mine`, {
+          cache: "no-store",
+        })
         if (!res.ok) {
           throw new Error("Failed to load tuitions")
         }
 
         const data = await res.json()
-        const allList: TutorTuition[] = Array.isArray(data)
+        const mine: TutorTuition[] = Array.isArray(data)
           ? data
           : Array.isArray(data?.tutions)
             ? data.tutions
             : []
-
-        const mine = tutorEmail
-          ? allList.filter((item) => {
-              const ownerEmail = (
-                item.tutorEmail ||
-                item.email ||
-                ""
-              ).toLowerCase()
-              return ownerEmail === tutorEmail
-            })
-          : allList
 
         if (active) {
           setTuitions(mine)
@@ -125,7 +118,7 @@ export default function TutorDashboardPage() {
     return () => {
       active = false
     }
-  }, [tutorEmail])
+  }, [])
 
   const stats = useMemo(() => {
     const totalPosted = tuitions.length

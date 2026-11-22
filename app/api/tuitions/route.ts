@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -24,15 +25,10 @@ type Tuition = {
 }
 
 async function getSession(request: NextRequest) {
-  const authBaseUrl = process.env.BETTER_AUTH_URL || "http://localhost:3000"
-  const response = await fetch(`${authBaseUrl}/api/auth/get-session`, {
-    headers: { cookie: request.headers.get("cookie") || "" },
-    cache: "no-store",
+  return auth.api.getSession({
+    headers: request.headers,
+    query: { disableCookieCache: true },
   })
-
-  if (!response.ok) return null
-  const session = await response.json().catch(() => null)
-  return session?.user ? session : null
 }
 
 function extractTuitions(data: unknown): Tuition[] {
@@ -45,10 +41,13 @@ function extractTuitions(data: unknown): Tuition[] {
   throw new Error("The tuition service returned an unexpected response.")
 }
 
-async function getTutorTuitions(email: string) {
+async function getTutorTuitions(email: string, token: string) {
   const response = await fetch(
-    `${API_BASE}/tutions?tutorEmail=${encodeURIComponent(email)}`,
-    { cache: "no-store" }
+    `${API_BASE}/tutions/mine`,
+    {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }
   )
 
   if (!response.ok) {
@@ -76,7 +75,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Your account has no email address." }, { status: 400 })
     }
 
-    return NextResponse.json({ tutions: await getTutorTuitions(email) })
+    return NextResponse.json({
+      tutions: await getTutorTuitions(email, session.session.token),
+    })
   } catch (error) {
     return NextResponse.json(
       {
@@ -133,7 +134,10 @@ export async function POST(request: NextRequest) {
     }
 
     const plan = String(session.user.plan || "free").toLowerCase()
-    const existing = await getTutorTuitions(tutorEmail)
+    const existing = await getTutorTuitions(
+      tutorEmail,
+      session.session.token
+    )
     if (plan !== "pro" && existing.length >= 2) {
       return NextResponse.json(
         {
