@@ -158,8 +158,7 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16 lg:px-8 lg:py-24">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm">
-              <Sparkles className="size-3.5" />
-              A better way to learn and teach
+              <Sparkles className="size-3.5" />A better way to learn and teach
             </div>
             <h1 className="mt-6 text-4xl leading-[1.08] font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-[3.7rem]">
               Find your ideal tutor or{" "}
@@ -370,18 +369,21 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-xl">
-            <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase">
-              Find your focus
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              Great learning starts with the right subject.
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
-              Explore popular categories and find a tutor who fits your goals.
-            </p>
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 flex-col justify-center py-4 lg:min-h-[260px]">
+            <div className="max-w-xl text-left">
+              <p className="text-xs font-bold tracking-[0.18em] text-indigo-600 uppercase">
+                Find your focus
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Great learning starts with the right subject.
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
+                Explore popular categories and find a tutor who fits your goals.
+              </p>
+            </div>
           </div>
+
           <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:max-w-[620px]">
             {subjects.map((subject) => {
               const Icon = subject.icon
@@ -421,7 +423,9 @@ export default async function HomePage() {
                 key={stat.label}
                 className="flex items-center gap-4 rounded-2xl bg-white/80 px-5 py-4"
               >
-                <div className={`flex size-11 items-center justify-center rounded-xl bg-slate-50 ${stat.color}`}>
+                <div
+                  className={`flex size-11 items-center justify-center rounded-xl bg-slate-50 ${stat.color}`}
+                >
                   <Icon className="size-5" />
                 </div>
                 <div>

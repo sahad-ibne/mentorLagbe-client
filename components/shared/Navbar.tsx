@@ -119,7 +119,14 @@ export default function Navbar() {
 
   const firstLetter = getFirstLetter(user?.name)
 
-  const publicNavbarRoutes = ["/", "/browse-tutions", "/pricing", "/about"]
+  const publicNavbarRoutes = [
+    "/",
+    "/browse-tutions",
+    "/pricing",
+    "/about",
+    "/sign-in",
+    "/sign-up",
+  ]
   if (!publicNavbarRoutes.includes(pathname)) return null
 
   return (
@@ -230,19 +237,23 @@ export default function Navbar() {
             </div>
           ) : (
             <>
-              <Link href="/sign-in">
-                <Button
-                  variant="outline"
-                  className="border-slate-300 text-slate-700 hover:bg-slate-50"
-                >
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
-                  Sign Up
-                </Button>
-              </Link>
+              {pathname !== "/sign-in" && (
+                <Link href="/sign-in">
+                  <Button
+                    variant="outline"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+              )}
+              {pathname !== "/sign-up" && (
+                <Link href="/sign-up">
+                  <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
+                    Sign Up
+                  </Button>
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -338,16 +349,26 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full bg-indigo-600 text-white hover:bg-indigo-700">
-                    Sign Up
-                  </Button>
-                </Link>
+                {pathname !== "/sign-in" && (
+                  <Link
+                    href="/sign-in"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button variant="outline" className="w-full">
+                      Sign In
+                    </Button>
+                  </Link>
+                )}
+                {pathname !== "/sign-up" && (
+                  <Link
+                    href="/sign-up"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button className="w-full bg-indigo-600 text-white hover:bg-indigo-700">
+                      Sign Up
+                    </Button>
+                  </Link>
+                )}
               </>
             )}
           </div>

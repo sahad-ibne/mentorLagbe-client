@@ -1,11 +1,10 @@
 import { auth } from "@/lib/auth"
-import { stripe } from "@/lib/stripe"
+import {
+  STUDENT_PRO_PRICE_ID,
+  stripe,
+  TUTOR_PRO_PRICE_ID,
+} from "@/lib/stripe"
 import { NextRequest, NextResponse } from "next/server"
-
-const TUTOR_PRO_PRICE_ID =
-  process.env.STRIPE_PRO_PRICE_ID || "price_1UeV9Z9pnCvIG9dFoAJZUfQ7"
-const STUDENT_PRO_PRICE_ID =
-  process.env.STRIPE_STUDENT_PRO_PRICE_ID || "price_1UebKQ9pnCvIG9dFKZlN01S5"
 
 export async function POST(request: NextRequest) {
   try {

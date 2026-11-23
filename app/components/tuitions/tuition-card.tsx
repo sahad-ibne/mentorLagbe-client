@@ -43,7 +43,7 @@ export function TuitionCard({ tuition }: { tuition: TuitionItem }) {
   const modeLabel = (tuition.mode || "offline").toLowerCase()
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-slate-200 bg-white shadow-xs transition hover:border-indigo-200 hover:shadow-md">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-slate-200 bg-white pt-0 shadow-xs transition hover:border-indigo-200 hover:shadow-md">
       <div className="relative h-44 w-full overflow-hidden bg-slate-100">
         <Image
           src={tuition.bannerImage?.trim() || DEFAULT_BANNER}

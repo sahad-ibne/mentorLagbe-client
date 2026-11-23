@@ -66,6 +66,10 @@ export async function POST(request: NextRequest) {
       success: true,
       plan: result.plan || "pro",
       role: result.role || role,
+      user: {
+        name: userSession.user.name,
+        email: userSession.user.email,
+      },
     })
   } catch (error) {
     return NextResponse.json(
