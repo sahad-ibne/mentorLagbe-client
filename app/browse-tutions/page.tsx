@@ -1,21 +1,20 @@
 import React from "react"
-import { getTutions } from "@/lib/api/tutions"
-import {
-  TuitionCard,
-  type TuitionItem,
-} from "../components/tuitions/tuition-card"
+import { getPaginatedTuitions } from "@/lib/api/tutions"
+import { TuitionCard, type TuitionItem } from "../components/tuitions/tuition-card"
 import { TuitionFilterBar } from "../components/tuitions/tuition-filter-bar"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
 export const dynamic = "force-dynamic"
 
 const firstParam = (val: string | string[] | undefined) =>
   Array.isArray(val) ? val[0] || "" : val || ""
-
-const isApprovedAndActive = (item: TuitionItem) => {
-  const approved = (item.approvalStatus || "").toLowerCase() === "approved"
-  const active = item.isActive === true
-  return approved && active
-}
 
 const BrowseTutionsPage = async ({
   searchParams,
@@ -28,35 +27,39 @@ const BrowseTutionsPage = async ({
   const subject = firstParam(resolvedParams.subject).trim()
   const classLevel = firstParam(resolvedParams.classLevel).trim()
   const mode = firstParam(resolvedParams.mode).trim()
+  const requestedPage = Number(firstParam(resolvedParams.page) || "1")
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
 
-  const apiParams = new URLSearchParams()
-  if (subject) apiParams.set("subject", subject)
-  if (classLevel) apiParams.set("classLevel", classLevel)
-  if (mode && mode !== "all") apiParams.set("mode", mode)
-
-  const rawData: unknown = await getTutions(apiParams.toString())
-
-  const list: TuitionItem[] = Array.isArray(rawData)
-    ? (rawData as TuitionItem[])
-    : rawData &&
-        typeof rawData === "object" &&
-        "tutions" in rawData &&
-        Array.isArray((rawData as { tutions?: unknown }).tutions)
-      ? (rawData as { tutions: TuitionItem[] }).tutions
-      : []
-
-  const qLower = q.toLowerCase()
-  const approvedActiveTuitions = list.filter((item) => {
-    if (!isApprovedAndActive(item)) return false
-    if (!qLower) return true
-
-    return (
-      item.title?.toLowerCase().includes(qLower) ||
-      item.location?.toLowerCase().includes(qLower) ||
-      item.subject?.toLowerCase().includes(qLower) ||
-      item.tutorName?.toLowerCase().includes(qLower)
-    )
+  const paginated = await getPaginatedTuitions({
+    page,
+    pageSize: 9,
+    q,
+    subject,
+    classLevel,
+    mode: mode && mode !== "all" ? mode : "",
   })
+  const approvedActiveTuitions = paginated.tutions as TuitionItem[]
+
+  const buildPageUrl = (targetPage: number) => {
+    const params = new URLSearchParams()
+    if (q) params.set("q", q)
+    if (subject) params.set("subject", subject)
+    if (classLevel) params.set("classLevel", classLevel)
+    if (mode && mode !== "all") params.set("mode", mode)
+    if (targetPage > 1) params.set("page", String(targetPage))
+    const query = params.toString()
+    return query ? `/browse-tutions?${query}` : "/browse-tutions"
+  }
+
+  const pageNumbers = Array.from(
+    { length: paginated.totalPages },
+    (_, index) => index + 1
+  ).filter(
+    (number) =>
+      number === 1 ||
+      number === paginated.totalPages ||
+      Math.abs(number - paginated.page) <= 1
+  )
 
   return (
     <section className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
@@ -81,10 +84,14 @@ const BrowseTutionsPage = async ({
         <span>
           Showing{" "}
           <strong className="text-slate-900">
-            {approvedActiveTuitions.length}
+            {paginated.total === 0
+              ? 0
+              : (paginated.page - 1) * paginated.pageSize + 1}
+            -
+            {Math.min(paginated.page * paginated.pageSize, paginated.total)}
           </strong>{" "}
-          approved active{" "}
-          {approvedActiveTuitions.length === 1 ? "tuition" : "tuitions"}
+          of <strong className="text-slate-900">{paginated.total}</strong>{" "}
+          approved active {paginated.total === 1 ? "tuition" : "tuitions"}
         </span>
       </div>
 
@@ -98,14 +105,67 @@ const BrowseTutionsPage = async ({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {approvedActiveTuitions.map((tuition, idx) => (
-            <TuitionCard
-              key={tuition._id || tuition.id || `${tuition.title}-${idx}`}
-              tuition={tuition}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {approvedActiveTuitions.map((tuition, idx) => (
+              <TuitionCard
+                key={tuition._id || tuition.id || `${tuition.title}-${idx}`}
+                tuition={tuition}
+              />
+            ))}
+          </div>
+
+          {paginated.totalPages > 1 && (
+            <Pagination className="pt-2">
+              <PaginationContent>
+                <PaginationItem>
+                  {paginated.page === 1 ? (
+                    <PaginationPrevious
+                      aria-disabled="true"
+                      tabIndex={-1}
+                      className="pointer-events-none opacity-50"
+                      href="#"
+                    />
+                  ) : (
+                    <PaginationPrevious href={buildPageUrl(paginated.page - 1)} />
+                  )}
+                </PaginationItem>
+
+                {pageNumbers.map((number, index) => (
+                  <React.Fragment key={number}>
+                    {index > 0 && number - pageNumbers[index - 1] > 1 && (
+                      <PaginationItem>
+                        <span className="px-2 text-slate-400">...</span>
+                      </PaginationItem>
+                    )}
+                    <PaginationItem>
+                      <PaginationLink
+                        href={buildPageUrl(number)}
+                        isActive={number === paginated.page}
+                        aria-label={`Go to page ${number}`}
+                      >
+                        {number}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </React.Fragment>
+                ))}
+
+                <PaginationItem>
+                  {paginated.page === paginated.totalPages ? (
+                    <PaginationNext
+                      aria-disabled="true"
+                      tabIndex={-1}
+                      className="pointer-events-none opacity-50"
+                      href="#"
+                    />
+                  ) : (
+                    <PaginationNext href={buildPageUrl(paginated.page + 1)} />
+                  )}
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
       )}
     </section>
   )
