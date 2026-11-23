@@ -1,5 +1,4 @@
 import React from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,6 +16,8 @@ import {
 import { getTutionById } from "@/lib/api/tutions"
 import { ApplyTuitionButton } from "@/app/components/tuitions/apply-tuition-button"
 import { BookmarkTuitionButton } from "@/app/components/tuitions/bookmark-tuition-button"
+import { TuitionBanner } from "@/app/components/tuitions/tuition-banner"
+import { TuitionReviews } from "@/app/components/tuitions/tuition-reviews"
 
 export const dynamic = "force-dynamic"
 
@@ -40,6 +41,7 @@ const TutionDetailesPage = async ({
   }
 
   const tutorInitial = (tuition.tutorName || "T").charAt(0).toUpperCase()
+  const bannerImage = tuition.bannerImage?.trim()
   const isActive =
     typeof tuition.isActive === "boolean"
       ? tuition.isActive
@@ -59,16 +61,11 @@ const TutionDetailesPage = async ({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-xs">
-            <div className="relative h-56 w-full bg-slate-100 sm:h-72">
-              <Image
-                src={tuition.bannerImage?.trim() || DEFAULT_BANNER}
-                alt={tuition.title}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 66vw"
-                className="object-cover"
-              />
+          <Card className="gap-0 overflow-hidden rounded-2xl border-slate-200 bg-white pt-0 shadow-xs">
+            <TuitionBanner
+              src={bannerImage || DEFAULT_BANNER}
+              alt={tuition.title}
+            >
               <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-indigo-700 capitalize shadow-xs backdrop-blur-xs">
                   {tuition.mode}
@@ -83,9 +80,9 @@ const TutionDetailesPage = async ({
                   {isActive ? "Active" : "Closed"}
                 </span>
               </div>
-            </div>
+            </TuitionBanner>
 
-            <CardHeader className="space-y-3 pb-4">
+            <CardHeader className="space-y-3 pt-6 pb-4">
               <div className="flex flex-wrap items-center gap-2 text-xs font-medium">
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-2.5 py-1 text-indigo-700">
                   <BookOpen className="size-3.5" />
@@ -223,6 +220,11 @@ const TutionDetailesPage = async ({
           </Card>
         </div>
       </div>
+
+      <TuitionReviews
+        key={tuition._id || tuition.id || id}
+        tuitionId={tuition._id || tuition.id || id}
+      />
     </section>
   )
 }

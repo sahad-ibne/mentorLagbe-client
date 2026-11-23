@@ -1,5 +1,5 @@
 import React from "react"
-import { getPaginatedTuitions } from "@/lib/api/tutions"
+import { getPaginatedTuitions } from "@/lib/server/tuitions"
 import { TuitionCard, type TuitionItem } from "../components/tuitions/tuition-card"
 import { TuitionFilterBar } from "../components/tuitions/tuition-filter-bar"
 import {
